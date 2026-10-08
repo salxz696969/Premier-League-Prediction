@@ -214,7 +214,8 @@ def team_player_features(matches: pd.DataFrame, player_matches: pd.DataFrame | N
 
 
 def display_name(key: str) -> str:
-    return " ".join(w.capitalize() for w in key.split())
+    """'dominic calvert-lewin' -> 'Dominic Calvert-Lewin', "o'brien" -> "O'Brien"."""
+    return re.sub(r"(^|[\s\-'])([a-z])", lambda m: m.group(1) + m.group(2).upper(), key)
 
 
 def latest_lineups(player_matches: pd.DataFrame) -> dict[str, dict]:

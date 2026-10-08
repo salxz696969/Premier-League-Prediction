@@ -19,7 +19,7 @@ from .evaluation import BOOKMAKER
 
 # Colour-blind-safe categorical palette (fixed order) + text/grid tones.
 BLUE, ORANGE, AQUA, YELLOW, MAGENTA, GREEN, VIOLET, RED = (
-    "#2a78d6", "#eb6834", "#1baf7a", "#eda100", "#e87ba4", "#008300", "#4a3aa7", "#e34948",
+    "#2a78d6", "#eb6834", "#1baf7a", "#eda100", "#e87ba4", "#008300", "#4a3aa7", "#d12f2f",
 )
 SEQUENTIAL = ["#cde2fb", "#9ec5f4", "#6da7ec", "#3987e5", "#256abf", "#184f95", "#0d366b"]
 GREY = "#b4b2ab"
@@ -62,7 +62,7 @@ def _save(fig, name: str) -> None:
 
 def _model_colour(model: str, best_model: str) -> str:
     if model == BOOKMAKER:
-        return ORANGE
+        return RED
     if model == best_model:
         return BLUE
     return GREY
@@ -96,7 +96,7 @@ def model_comparison(overall: pd.DataFrame, best_model: str) -> None:
 
 def accuracy_by_season(by_season: pd.DataFrame, best_model: str) -> None:
     fig, ax = plt.subplots(figsize=(9, 4.4))
-    for model, colour, style in [(BOOKMAKER, ORANGE, "-"), (best_model, BLUE, "-"), (BASELINE, GREY, "--")]:
+    for model, colour, style in [(BOOKMAKER, RED, "-"), (best_model, BLUE, "-"), (BASELINE, GREY, "--")]:
         rows = by_season[by_season["model"] == model]
         ax.plot(rows["season_label"], rows["accuracy"], style, color=colour, marker="o", markersize=5, label=model)
     ax.set_title("Accuracy per test season")
@@ -112,7 +112,7 @@ def calibration(predictions: pd.DataFrame, best_model: str) -> None:
     bins = np.linspace(0, 1, 11)
     for ax, outcome, title in zip(axes, config.OUTCOMES, ["Home win", "Draw", "Away win"]):
         ax.plot([0, 1], [0, 1], color=GREY, linewidth=1, linestyle="--", label="Perfect calibration")
-        for model, colour in [(best_model, BLUE), (BOOKMAKER, ORANGE)]:
+        for model, colour in [(best_model, BLUE), (BOOKMAKER, RED)]:
             rows = predictions[predictions["model"] == model]
             prob = rows[f"prob_{outcome}"]
             happened = rows["result"].eq(outcome)
@@ -168,7 +168,7 @@ def feature_importance(importance: pd.DataFrame) -> None:
 def outcomes_by_season(matches: pd.DataFrame) -> None:
     share = pd.crosstab(matches["season_label"], matches["result"], normalize="index")[config.OUTCOMES]
     fig, ax = plt.subplots(figsize=(10, 4.2))
-    for outcome, colour, name in zip(config.OUTCOMES, [BLUE, GREY, ORANGE], ["Home win", "Draw", "Away win"]):
+    for outcome, colour, name in zip(config.OUTCOMES, [BLUE, GREY, RED], ["Home win", "Draw", "Away win"]):
         ax.plot(share.index, share[outcome], color=colour, marker="o", markersize=4, label=name)
     covid = list(share.index).index("2020-21")
     ax.axvspan(covid - 0.5, covid + 0.5, color="#f0efec", zorder=0)
@@ -188,7 +188,7 @@ def elo_history(features: pd.DataFrame, teams: list[str]) -> None:
             features[["date", "away_team", "away_elo"]].set_axis(["date", "team", "elo"], axis=1),
         ]
     ).sort_values("date")
-    palette = [BLUE, ORANGE, AQUA, YELLOW, MAGENTA, VIOLET]
+    palette = [BLUE, RED, AQUA, YELLOW, MAGENTA, VIOLET]
     fig, ax = plt.subplots(figsize=(11, 5))
     for team, colour in zip(teams, palette):
         rows = long[long["team"] == team].set_index("date")["elo"].rolling(5, min_periods=1).mean()
@@ -206,7 +206,7 @@ def season_2019_comparison(table: pd.DataFrame) -> None:
     """Compare with the original project on the same test matches (Feb-Mar 2020)."""
     rows = table.sort_values("accuracy")
     fig, ax = plt.subplots(figsize=(8, 4.4))
-    colours = [ORANGE if m == BOOKMAKER else RED if m.startswith("Original") else GREY if m == BASELINE
+    colours = [RED if m == BOOKMAKER else TEXT_2 if m.startswith("Original") else GREY if m == BASELINE
                else BLUE for m in rows["model"]]
     bars = ax.barh(rows["model"], rows["accuracy"], color=colours, height=0.6)
     for bar in bars:
@@ -226,7 +226,7 @@ def extended_comparison(results: pd.DataFrame) -> None:
     rows = results[results["rps_change"].notna()].copy()
     sets = list(dict.fromkeys(rows["feature_set"]))
     models = list(dict.fromkeys(rows["model"]))
-    colours = dict(zip(sets, [BLUE, ORANGE, AQUA, VIOLET]))
+    colours = dict(zip(sets, [BLUE, VIOLET, AQUA, GREY]))
     fig, ax = plt.subplots(figsize=(9, 1.0 + 0.9 * len(models)))
     step = 0.8 / max(1, len(sets))
     for j, fset in enumerate(sets):

@@ -8,6 +8,16 @@ const SVG = "http://www.w3.org/2000/svg";
 const css = (name) => getComputedStyle(document.documentElement).getPropertyValue(name).trim();
 const pct = (v, d = 0) => (v == null ? "–" : `${(v * 100).toFixed(d)}%`);
 const num = (v, d = 1) => (v == null ? "–" : Number(v).toFixed(d));
+/* Round three shares to whole percents that always add up to 100
+   (largest remainder), so 64.6 / 20.7 / 14.7 never shows as 65 + 21 + 15 = 101. */
+function pct3(values) {
+  const raw = values.map((v) => v * 100);
+  const out = raw.map(Math.floor);
+  const order = raw.map((v, i) => [v - Math.floor(v), i]).sort((a, b) => b[0] - a[0]);
+  const missing = 100 - out.reduce((a, b) => a + b, 0);
+  for (let k = 0; k < missing; k++) out[order[k][1]] += 1;
+  return out.map((v) => `${v}%`);
+}
 const ordinal = (n) => {
   const s = ["th", "st", "nd", "rd"], v = n % 100;
   return n + (s[(v - 20) % 10] || s[v] || s[0]);
@@ -237,11 +247,22 @@ async function initPredict() {
   $("#home-team").innerHTML = options;
   $("#away-team").innerHTML = options;
   [$("#home-team").value, $("#away-team").value] = o.default_fixture;
-  $("#home-team").addEventListener("change", runPredict);
-  $("#away-team").addEventListener("change", runPredict);
+  let shown = [...o.default_fixture]; // the fixture currently in the two boxes
+  const onPick = (changed, other) => () => {
+    // Picking the team that's already on the other side swaps the two.
+    if (changed.value === other.value) {
+      other.value = changed === $("#home-team") ? shown[0] : shown[1];
+      toast("Swapped home and away");
+    }
+    shown = [$("#home-team").value, $("#away-team").value];
+    runPredict();
+  };
+  $("#home-team").addEventListener("change", onPick($("#home-team"), $("#away-team")));
+  $("#away-team").addEventListener("change", onPick($("#away-team"), $("#home-team")));
   $("#swap").addEventListener("click", () => {
     const h = $("#home-team"), a = $("#away-team");
     [h.value, a.value] = [a.value, h.value];
+    shown = [h.value, a.value];
     $("#swap").classList.toggle("turned");
     runPredict();
   });
@@ -267,14 +288,15 @@ async function runPredict() {
 
 function renderPrediction(p) {
   const { H, D, A } = p.probabilities;
-  $("#p-home").textContent = pct(H);
-  $("#p-draw").textContent = pct(D);
-  $("#p-away").textContent = pct(A);
+  const [ph, pd, pa] = pct3([H, D, A]);
+  $("#p-home").textContent = ph;
+  $("#p-draw").textContent = pd;
+  $("#p-away").textContent = pa;
   $("#l-home").textContent = `${p.home} win`;
   $("#l-away").textContent = `${p.away} win`;
   const segs = $$("#prob-bar .seg");
   [H, D, A].forEach((v, i) => (segs[i].style.width = `calc(${(v * 100).toFixed(2)}% - 1.34px)`));
-  $("#prob-bar").setAttribute("aria-label", `${p.home} win ${pct(H)}, draw ${pct(D)}, ${p.away} win ${pct(A)}`);
+  $("#prob-bar").setAttribute("aria-label", `${p.home} win ${ph}, draw ${pd}, ${p.away} win ${pa}`);
   $("#xg-home").textContent = num(p.expected_goals.home, 2);
   $("#xg-away").textContent = num(p.expected_goals.away, 2);
 
@@ -525,7 +547,7 @@ function drawModels() {
   hbars($("#original"), orig.map((r) => ({
     label: r.model.startsWith("Original") ? "Version 1 (random forest)" : shortName(r.model),
     value: r.accuracy,
-    color: r.model.startsWith("Original") ? css("--bad") : r.model === d.baseline ? css("--draw") : r.model === d.bookmaker ? css("--away") : css("--home"),
+    color: r.model.startsWith("Original") ? css("--text-2") : r.model === d.baseline ? css("--draw") : r.model === d.bookmaker ? css("--away") : css("--home"),
   })), { format: (v) => pct(v, 1), domain: [0, 0.7], labelWidth: 190, rowHeight: 28, ariaLabel: "Accuracy on version 1's test matches" });
 }
 
@@ -585,7 +607,7 @@ function drawMatches() {
     return `<li class="match" title="Model's pick: ${esc(label)}">
       <div class="teams"><div class="line"><span class="names">${esc(m.home)} <span class="score">${esc(m.score)}</span> ${esc(m.away)}</span></div><span class="date">${m.date}</span></div>
       <div><div class="mini" aria-label="Home ${pct(m.prob.H)}, draw ${pct(m.prob.D)}, away ${pct(m.prob.A)}"><span style="width:${m.prob.H * 100}%;background:var(--home)"></span><span style="width:${m.prob.D * 100}%;background:var(--draw)"></span><span style="width:${m.prob.A * 100}%;background:var(--away)"></span></div>
-      <div class="mini-labels"><span>${pct(m.prob.H)}</span><span>${pct(m.prob.D)}</span><span>${pct(m.prob.A)}</span></div></div>
+      <div class="mini-labels">${pct3([m.prob.H, m.prob.D, m.prob.A]).map((v) => `<span>${v}</span>`).join("")}</div></div>
       <span class="mark ${ok ? "ok" : "no"}" role="img" aria-label="${ok ? "Correct" : "Wrong"}">${ok ? CHECK : CROSS}</span></li>`;
   }).join("");
   $("#show-more").hidden = rows.length <= matchLimit;
