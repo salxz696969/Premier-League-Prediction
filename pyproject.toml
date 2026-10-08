@@ -12,11 +12,6 @@ dependencies = [
     "scipy>=1.11",
 ]
 
-[project.optional-dependencies]
-app = [
-    "gradio>=4.0",
-]
-
 [dependency-groups]
 dev = [
     "ipykernel>=6.0",

@@ -37,4 +37,8 @@ The raw files are saved in `data/raw/` exactly as downloaded. `scripts/01_downlo
 
 ## Software
 
-Python, pandas, NumPy, SciPy, scikit-learn, matplotlib, Gradio (demo app), pytest.
+Python, pandas, NumPy, SciPy, scikit-learn, matplotlib, pytest. The web app uses only the Python standard library and plain HTML/CSS/JavaScript.
+
+## Design
+
+The web app follows Apple's interface design principles as summarised in the **apple-design** skill by Emil Kowalski (https://github.com/emilkowalski/skills), which draws on Apple WWDC talks such as *Designing Fluid Interfaces* (2018) and *The Details of UI Typography* (2020).

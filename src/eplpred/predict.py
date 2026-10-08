@@ -9,13 +9,13 @@ uses each team's latest Elo, form, league position etc.
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 import numpy as np
 import pandas as pd
 
 from . import config
-from .features import build_features
+from .features import build_features, feature_columns
 from .models import BaseModel, PoissonGoals, make_models
 
 
@@ -29,6 +29,10 @@ class Prediction:
     expected_home_goals: float
     expected_away_goals: float
     most_likely_score: str
+    # The five most likely exact scores, e.g. [("1-0", 0.12), ...]
+    top_scores: list[tuple[str, float]] = field(default_factory=list)
+    # The model inputs for this fixture (Elo, form, position, ...)
+    features: dict[str, float] = field(default_factory=dict)
 
     def __str__(self) -> str:
         return (
@@ -84,5 +88,9 @@ class Predictor:
         proba = self.model.predict_proba(row)[0]
         lam_h, lam_a = (x[0] for x in self.poisson.expected_goals(row))
         grid = self.poisson.score_matrix(lam_h, lam_a)
-        h, a = np.unravel_index(grid.argmax(), grid.shape)
-        return Prediction(home_team, away_team, *map(float, proba), float(lam_h), float(lam_a), f"{h}-{a}")
+        best = np.argsort(grid, axis=None)[::-1][:5]
+        top_scores = [(f"{h}-{a}", float(grid[h, a])) for h, a in zip(*np.unravel_index(best, grid.shape))]
+        inputs = {c: float(v) for c, v in row[feature_columns()].iloc[0].items() if pd.notna(v)}
+        return Prediction(
+            home_team, away_team, *map(float, proba), float(lam_h), float(lam_a), top_scores[0][0], top_scores, inputs
+        )

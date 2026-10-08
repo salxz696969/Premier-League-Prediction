@@ -9,6 +9,40 @@ This is version 2 of [premier-league-prediction-2019-2020](https://github.com/sa
 * **Honest evaluation**: walk-forward testing on 12 full seasons (4,560 matches the models never saw)
 * **A professional benchmark**: our models are compared with bookmaker odds
 * **Sources for everything**, listed in [`SOURCES.md`](SOURCES.md)
+* **A web app to show it all**: predictor, team ratings, model results and a season explorer
+
+---
+
+## The app
+
+```bash
+uv sync
+uv run python app.py          # opens http://127.0.0.1:8000 in your browser
+```
+
+It runs on your own computer and needs no internet connection, so it's safe for a live demo. It has five sections:
+
+| Section | What it shows |
+|---|---|
+| **Predict** | Pick any two current teams: win/draw/loss probabilities, expected goals, the 5 most likely scores, and *why* (Elo, form, position and goals side by side) |
+| **Teams** | Current Elo ranking, plus Elo history since 2000 for up to 4 teams (hover for values) |
+| **Models** | Every model vs the bookmaker and the baseline (accuracy, RPS, log loss), season-by-season accuracy, feature importance, the draw problem, calibration, and version 1 vs version 2 |
+| **Seasons** | Final table of any season from 2000-01; for 2014-15 onwards, every pre-match prediction with ✓/✗, filterable by team (try Leicester 2015-16) |
+| **About** | The method in four steps, plus sources |
+
+![Predict](docs/screenshots/predict.png)
+
+<details>
+<summary><b>More screenshots</b> (models, teams, seasons, dark mode)</summary>
+
+![Models](docs/screenshots/models.png)
+![Teams](docs/screenshots/teams.png)
+![Seasons](docs/screenshots/seasons.png)
+![Dark mode](docs/screenshots/predict-dark.png)
+
+</details>
+
+The design follows Apple's interface guidelines (via the [apple-design skill](https://github.com/emilkowalski/skills)): system font, translucent navigation bar, instant press feedback, smooth non-bouncy motion, light/dark mode, and gentler versions for the reduced-motion, reduced-transparency and high-contrast settings. It uses only the Python standard library and plain HTML/CSS/JavaScript, with charts drawn as SVG and no outside libraries.
 
 ---
 
@@ -114,7 +148,7 @@ All models output **probabilities** for H/D/A. Settings were tuned on seasons 20
 Requirements: Python 3.11+ and [uv](https://docs.astral.sh/uv/) (or pip).
 
 ```bash
-uv sync --all-extras                         # install everything
+uv sync                                      # install everything
 
 uv run python scripts/run_all.py             # whole pipeline, a few minutes
 #   or step by step:
@@ -139,15 +173,11 @@ Arsenal vs Chelsea
   Expected goals: 2.07 - 0.78 (most likely score 2-0)
 ```
 
-**Interactive demo** (pick two teams in the browser):
-
-```bash
-uv run --extra app python app.py             # then open http://127.0.0.1:7860
-```
+**Web app:** `uv run python app.py` (see [The app](#the-app) above). Add `--port 8080` to change the port or `--no-browser` to stop it opening a browser tab.
 
 **Walkthrough notebook:** [`notebooks/walkthrough.ipynb`](notebooks/walkthrough.ipynb) tells the whole story with outputs already included, in the presentation order below.
 
-Without uv: `pip install -e ".[app]" pytest`, then run the same `python scripts/...` commands.
+Without uv: `pip install -e . pytest`, then run the same `python app.py` / `python scripts/...` commands.
 
 ---
 
@@ -159,7 +189,7 @@ Without uv: `pip install -e ".[app]" pytest`, then run the same `python scripts/
 4. **Fair testing:** walk-forward by season, and why 38 test matches are not enough → `season_2019_20_vs_original.png`.
 5. **Results:** `model_accuracy.png`, `accuracy_by_season.png`: best model vs bookmaker vs baseline.
 6. **Insights:** Elo carries most of the signal (`feature_importance.png`), draws are unpredictable (`confusion_matrix.png`), probabilities are calibrated (`calibration.png`).
-7. **Live demo:** `app.py` or `predict_match.py`.
+7. **Live demo:** `python app.py`: predict a fixture the class suggests, then show Leicester 2015-16 in *Seasons*.
 8. **Limitations and future work** (below), then **sources** (`SOURCES.md`).
 
 ---
@@ -179,7 +209,8 @@ Without uv: `pip install -e ".[app]" pytest`, then run the same `python scripts/
 ```
 ├── README.md                 ← you are here
 ├── SOURCES.md                ← data sources + academic references
-├── app.py                    ← Gradio demo
+├── app.py                    ← starts the web app
+├── docs/screenshots/         ← screenshots of the app
 ├── data/
 │   ├── raw/                  ← downloaded files, unchanged (football-data/, odds/)
 │   └── processed/            ← matches.csv (+ features.csv, rebuilt by step 2)
@@ -193,7 +224,8 @@ Without uv: `pip install -e ".[app]" pytest`, then run the same `python scripts/
 │   └── tuning_log.txt        ← how the settings were chosen
 ├── scripts/                  ← 01_…04_ pipeline steps, run_all.py, predict_match.py, tune_models.py
 ├── src/eplpred/              ← the code (config, data, elo, features, models, evaluation, plots, predict)
-└── tests/                    ← pytest tests (leakage, Elo, metrics, data)
+│   └── web/                  ← the app: api.py (data), server.py (web server), static/ (HTML, CSS, JS)
+└── tests/                    ← pytest tests (leakage, Elo, metrics, data, web app)
 ```
 
 ## Data licence
