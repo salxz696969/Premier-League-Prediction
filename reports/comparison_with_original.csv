@@ -1,0 +1,10 @@
+model,matches,accuracy
+Elo only (logistic regression),38,0.5789473684210527
+Random forest,38,0.5789473684210527
+"Bookmaker (Bet365, benchmark)",38,0.5526315789473685
+Ensemble (LR + GB + Poisson),38,0.5526315789473685
+Poisson goals model,38,0.5526315789473685
+Logistic regression,38,0.5526315789473685
+Gradient boosting,38,0.5526315789473685
+Baseline: home-win rate,38,0.5789473684210527
+Original project (v1 random forest),38,0.4748

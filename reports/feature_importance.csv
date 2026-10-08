@@ -1,0 +1,50 @@
+feature,importance,std,label
+home_elo,0.006522182101772184,0.0008787179102914746,Home team Elo rating
+elo_diff,0.002228641327421332,0.0007086035440912326,Elo rating difference (home - away)
+elo_home_win_expectancy,0.0011319995936825977,0.0010829558690423915,Elo expected score of the home team
+away_form5_ppg,0.000564554144545959,0.00011317387356438684,"Away team points per game, last 5"
+home_season_ppg,0.0005610533786070571,0.0001593943026984986,Home team points per game this season
+home_promoted,0.0004389350150889093,0.00030070791817481834,Home team is newly promoted
+away_position,0.00041993932605839944,0.00016240033491625515,Away team league position
+home_ewm_goals_against,0.00036899129611618343,0.00017718768100278377,Home team goals conceded per game (weighted)
+home_ewm_shots_for,0.00033976024094690694,0.00022856485990412512,Home team shots per game (weighted)
+home_ewm_sot_for,0.00032818409876158585,0.0002236325064150695,Home team shots on target per game (weighted)
+home_ewm_shots_against,0.0002993242841740351,0.00012883072294271307,Home team shots conceded per game (weighted)
+away_ewm_goals_for,0.00024163743084616994,0.0001372449241191739,Away team goals scored per game (weighted)
+h2h_home_ppg,0.0002401976974290676,8.403651822129402e-05,Home team's points per game in last 6 meetings
+home_season_gd_per_game,0.00021538223016069337,0.00014463299316226492,Home team goal difference per game this season
+position_diff,0.00016002735232053533,0.00022013768828980004,League position difference before the match
+home_ewm_sot_share,0.00015323235764889143,8.459677165269259e-05,Home team share of shots on target per game (weighted)
+goal_diff_form_diff,0.00014301604124005162,8.032195554797258e-05,Goal difference per game difference (weighted)
+home_ewm_corners_for,0.00014111819441589012,0.00010826308302910909,Home team corners per game (weighted)
+home_ewm_corners_against,0.0001405791111798005,0.00016110131970422243,Home team corners conceded per game (weighted)
+form_diff,0.00010729267495434568,0.00015199215085941395,"Points-per-game difference, last 5 matches"
+away_season_ppg,9.318173160713372e-05,0.0002860692916342383,Away team points per game this season
+home_ewm_sot_against,8.394931467216038e-05,4.007256673255811e-05,Home team shots on target conceded per game (weighted)
+home_prev_position,7.003349063026687e-05,6.557194720726819e-05,Home team position last season
+away_promoted,3.929467827684108e-05,8.593157225258656e-05,Away team is newly promoted
+rest_diff,2.4461717473700516e-05,8.48328156631427e-06,Rest days difference
+away_ewm_sot_against,2.441325673374073e-05,7.866053268595148e-05,Away team shots on target conceded per game (weighted)
+home_rest_days,9.335172810476244e-06,7.381523351807357e-06,Home team rest days
+matchweek,6.3595619163636655e-06,0.00011262700554531484,Matchweek of the season
+away_rest_days,5.638888264714037e-07,2.6609632258947915e-06,Away team rest days
+away_ewm_shots_against,-1.5588754004314254e-05,0.0003834267466463347,Away team shots conceded per game (weighted)
+home_venue_form5_ppg,-2.673888888035658e-05,3.7357463774874754e-05,"Home team points per game, last 5 home games"
+sot_share_diff,-2.7159464034820503e-05,0.00011230098321005668,Share of shots on target difference (weighted)
+h2h_meetings,-4.113387425681014e-05,2.2340079275622477e-05,Number of recent head-to-head meetings
+away_venue_form5_ppg,-4.306018345356932e-05,6.350395118498751e-05,"Away team points per game, last 5 away games"
+away_ewm_shots_for,-6.352661891889655e-05,0.00023106200239819162,Away team shots per game (weighted)
+home_form5_ppg,-7.493826419034955e-05,2.5786730465344408e-05,"Home team points per game, last 5"
+away_ewm_goals_against,-8.520095095539415e-05,0.00017970541883671092,Away team goals conceded per game (weighted)
+away_prev_position,-0.00011069835576568154,1.6590819467367504e-05,Away team position last season
+away_ewm_sot_for,-0.0001194226603133175,8.340964284074618e-05,Away team shots on target per game (weighted)
+home_ewm_goals_for,-0.00014300713733704783,0.00013535771074500065,Home team goals scored per game (weighted)
+away_season_gd_per_game,-0.00015176515855487848,4.9137792397694146e-05,Away team goal difference per game this season
+home_position,-0.0001550970397546314,0.00010565868355261287,Home team league position
+away_ewm_points,-0.00017623691411693953,0.00018213487453408933,Away team points per game (weighted)
+prev_position_diff,-0.00017770101697386909,7.098097946302001e-05,Last season's position difference
+away_ewm_sot_share,-0.0002236441847454751,0.00010926151322095923,Away team share of shots on target per game (weighted)
+home_ewm_points,-0.0002631800245703919,0.00015289520816782315,Home team points per game (weighted)
+away_ewm_corners_for,-0.00037598761124444936,7.153282863947596e-05,Away team corners per game (weighted)
+away_elo,-0.0004972909819413784,0.0003630374780342552,Away team Elo rating
+away_ewm_corners_against,-0.0006842991696073386,0.000364620791778817,Away team corners conceded per game (weighted)
