@@ -4,12 +4,12 @@ import json
 import threading
 import urllib.error
 import urllib.request
-from http.server import ThreadingHTTPServer
+from waitress import create_server
 
 import pytest
 
 from eplpred.web.api import ProjectData, league_table
-from eplpred.web.server import make_handler
+from eplpred.web.server import make_application
 
 
 @pytest.fixture(scope="module")
@@ -19,10 +19,11 @@ def project():
 
 @pytest.fixture(scope="module")
 def base_url(project):
-    server = ThreadingHTTPServer(("127.0.0.1", 0), make_handler(project))
-    threading.Thread(target=server.serve_forever, daemon=True).start()
-    yield f"http://127.0.0.1:{server.server_address[1]}"
-    server.shutdown()
+    server = create_server(make_application(project), host="127.0.0.1", port=0)
+    threading.Thread(target=server.run, daemon=True).start()
+    yield f"http://127.0.0.1:{server.effective_port}"
+    server.close()
+    server.task_dispatcher.shutdown()
 
 
 def get(url):
@@ -51,7 +52,7 @@ def test_test_seasons_have_predictions(project):
 
 
 def test_every_endpoint_answers(base_url):
-    for path in ["/", "/app.js", "/app.css", "/api/overview", "/api/teams", "/api/models",
+    for path in ["/", "/healthz", "/app.js", "/app.css", "/api/overview", "/api/teams", "/api/models",
                  "/api/seasons", "/api/season?label=2019-20", "/api/elo?team=Arsenal"]:
         status, body = get(base_url + path)
         assert status == 200, path
@@ -66,3 +67,20 @@ def test_bad_requests_are_rejected(base_url):
     with pytest.raises(urllib.error.HTTPError) as err:
         get(base_url + "/../pyproject.toml")
     assert err.value.code == 404
+
+
+def test_health_and_head_requests(base_url):
+    assert json.loads(get(base_url + "/healthz")[1]) == {"status": "ok"}
+    request = urllib.request.Request(base_url + "/", method="HEAD")
+    with urllib.request.urlopen(request, timeout=10) as response:
+        assert response.status == 200
+        assert int(response.headers["Content-Length"]) > 0
+        assert response.read() == b""
+
+
+def test_post_is_rejected(base_url):
+    request = urllib.request.Request(base_url + "/healthz", method="POST")
+    with pytest.raises(urllib.error.HTTPError) as err:
+        urllib.request.urlopen(request, timeout=10)
+    assert err.value.code == 405
+    assert err.value.headers["Allow"] == "GET, HEAD"

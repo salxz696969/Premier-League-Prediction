@@ -43,7 +43,7 @@ It runs on your own computer and needs no internet connection, so it's safe for 
 
 </details>
 
-The design follows Apple's interface guidelines (via the [apple-design skill](https://github.com/emilkowalski/skills)): system font, translucent navigation bar, instant press feedback, smooth non-bouncy motion, light/dark mode, and gentler versions for the reduced-motion, reduced-transparency and high-contrast settings. It uses only the Python standard library and plain HTML/CSS/JavaScript, with charts drawn as SVG and no outside libraries.
+The design follows Apple's interface guidelines (via the [apple-design skill](https://github.com/emilkowalski/skills)): system font, translucent navigation bar, instant press feedback, smooth non-bouncy motion, light/dark mode, and gentler versions for the reduced-motion, reduced-transparency and high-contrast settings. The frontend uses plain HTML/CSS/JavaScript, with charts drawn as SVG and no outside libraries. Python serves it through Waitress.
 
 ---
 
@@ -271,6 +271,14 @@ Without uv: `pip install -e . pytest`, then run the same `python app.py` / `pyth
 │   └── web/                  ← the app: api.py (data), server.py (web server), static/ (HTML, CSS, JS)
 └── tests/                    ← pytest tests (leakage incl. player data, Elo, metrics, data, extra data, web app)
 ```
+
+## Deployment and CI/CD
+
+The app deploys to your VPS at `http://<VPS_IP>:8000`, without a domain.
+See [deployment setup](deploy/README.md) for server preparation and GitHub secrets.
+GitHub Actions runs tests and checks the Docker image on pull requests and pushes.
+Successful pushes to `main` deploy that exact image over SSH; failed startup restores
+the previous running image. Feature branches do not deploy.
 
 ## Data licence
 
