@@ -1,0 +1,8 @@
+{
+  "name": "premier-league-prediction-slides",
+  "private": true,
+  "description": "Only needed to rebuild docs/slides.pptx (scripts/make_slides.js)",
+  "dependencies": {
+    "pptxgenjs": "^3.12.0"
+  }
+}

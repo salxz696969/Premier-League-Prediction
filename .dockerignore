@@ -10,10 +10,15 @@
 !data/processed/
 !data/processed/matches.csv
 !data/raw/
-!data/raw/players/
-!data/raw/players/**
+!data/raw/**
 !reports/
 !reports/*.csv
+!reports/figures/
+!reports/figures/*.png
+!docs/
+!docs/REPORT.md
+!docs/slides.json
+!docs/slides.pptx
 !scripts/
 !scripts/02_build_features.py
 **/__pycache__/
@@ -22,5 +27,4 @@
 .git/
 .pytest_cache/
 notebooks/
-docs/
-reports/figures/
+docs/screenshots/

@@ -25,11 +25,17 @@ It runs on your own computer and needs no internet connection, so it's safe for 
 
 | Section | What it shows |
 |---|---|
-| **Predict** | Pick any two current teams: win/draw/loss probabilities, expected goals, the 5 most likely scores, each team's expected starting eleven with every player's FPL influence, and *why* (Elo, form, position, goals and starting-XI strength side by side) |
-| **Teams** | Current Elo ranking, plus Elo history since 2000 for up to 4 teams (hover for values) |
-| **Models** | Every model vs the bookmaker and the baseline (accuracy, RPS, log loss), season-by-season accuracy, whether extra data helps, feature importance, the draw problem, calibration, and version 1 vs version 2 |
-| **Seasons** | Final table of any season from 2000-01; for 2014-15 onwards, every pre-match prediction with ✓/✗, filterable by team (try Leicester 2015-16) |
+| **Predict** | Pick any two current teams: win/draw/loss probabilities, the 5 most likely scores, **how the numbers are calculated** step by step with the model's real values, each team's expected starting eleven, and *why* |
+| **Teams** | Current Elo ranking, plus Elo history since 2000 for up to 4 teams |
+| **Models** | Every model vs the bookmaker and the baseline, season-by-season accuracy, whether extra data helps, feature importance, version 1 vs version 2 |
+| **Evaluation** | Accuracy (with 95% range), precision, recall, F1, confusion matrix, log loss, Brier, RPS, AUC, calibration, a worked example on real matches, and the walk-forward test diagram |
+| **Seasons** | Final table of any season; for 2014-15 onwards every pre-match prediction with ✓/✗ |
+| **Data** | Every dataset (raw and derived) row by row, with source and licence: search, filter, sort, choose columns, download CSV |
+| **Report** | The written report for the lecturer (print or save as PDF, or download Markdown) |
+| **Slides** | The presentation with speaker notes; full-screen presenting; download as PowerPoint |
 | **About** | The method in four steps, plus sources |
+
+**Report and slides are generated from the current results** (`src/eplpred/story.py`), so they always match the numbers on the site. After changing data or models, run `uv run python scripts/06_make_report.py` (part of `run_all.py`) to refresh `docs/REPORT.md` and `docs/slides.pptx`; building the PowerPoint needs Node.js (`npm install` once).
 
 ![Predict](docs/screenshots/predict.png)
 
@@ -197,6 +203,7 @@ uv run python scripts/02_build_features.py   # -> data/processed/features.csv
 uv run python scripts/03_evaluate_models.py  # walk-forward test -> reports/*.csv
 uv run python scripts/04_make_figures.py     # -> reports/figures/*.png
 uv run python scripts/05_extended_experiment.py  # does extra data help? (~6 minutes)
+uv run python scripts/06_make_report.py      # report + slides -> docs/ (PowerPoint needs Node.js)
 
 uv run pytest                                # tests (incl. the leakage test)
 ```
@@ -253,7 +260,7 @@ Without uv: `pip install -e . pytest`, then run the same `python app.py` / `pyth
 ├── README.md                 ← you are here
 ├── SOURCES.md                ← data sources + academic references
 ├── app.py                    ← starts the web app
-├── docs/screenshots/         ← screenshots of the app
+├── docs/                     ← REPORT.md, slides.pptx (+ slides.json), screenshots/
 ├── data/
 │   ├── raw/                  ← downloaded files: football-data/, odds/, other_competitions/, players/ (managers/ when added)
 │   └── processed/            ← matches.csv (+ features.csv, rebuilt by step 2)

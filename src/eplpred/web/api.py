@@ -124,6 +124,18 @@ class ProjectData:
     def predict(self, home: str, away: str) -> dict:
         return self._predict(home, away)
 
+    def story(self) -> dict:
+        """Report (as HTML) and slides, built from the current results."""
+        if getattr(self, "_story", None) is None:
+            import markdown
+
+            from ..story import build_story
+
+            story = build_story(self, figures="/figures")
+            html = markdown.markdown(story["report_md"], extensions=["tables", "toc"])
+            self._story = {"generated": story["generated"], "slides": story["slides"], "report_html": html}
+        return self._story
+
     def evaluation(self) -> dict:
         if self._evaluation is None:
             self._evaluation = evaluation_report(self.predictions, self.extended_predictions, self.best_model)

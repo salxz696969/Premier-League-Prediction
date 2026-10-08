@@ -121,3 +121,23 @@ def test_data_explorer_filters_and_csv(base_url):
     assert status == 200 and len(body.decode().strip().splitlines()) == 39
     with pytest.raises(urllib.error.HTTPError):
         get(base_url + "/api/data?dataset=nope")
+
+
+def test_story_report_and_slides(project):
+    """Report and slides are built from the current results (no hard-coded numbers)."""
+    st = project.story()
+    assert len(st["slides"]) >= 15
+    assert all(s["notes"] for s in st["slides"])
+    best = project.overall.sort_values("rps").iloc[0]
+    acc = f"{100 * project.overall.set_index('model').loc[project.best_model, 'accuracy']:.1f}%"
+    assert acc in st["report_html"]
+    assert "<table>" in st["report_html"] and "<h2" in st["report_html"]
+
+
+def test_figures_and_downloads_are_served_safely(base_url):
+    status, body = get(base_url + "/figures/model_accuracy.png")
+    assert status == 200 and body[:4] == b"\x89PNG"
+    for bad_path in ("/figures/../../pyproject.toml", "/downloads/slides.json", "/downloads/../app.py"):
+        with pytest.raises(urllib.error.HTTPError) as err:
+            get(base_url + bad_path)
+        assert err.value.code == 404

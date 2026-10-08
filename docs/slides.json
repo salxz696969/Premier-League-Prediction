@@ -1,0 +1,715 @@
+[
+ {
+  "kind": "title",
+  "kicker": "Data science project",
+  "title": "Can we predict Premier League matches?",
+  "subtitle": "26 seasons · 9,880 matches · 2000-01 to 2025-26",
+  "notes": "Hello everyone. Our project asks a simple question: before a Premier League match kicks off, can a computer predict the chance of a home win, a draw or an away win? We used every Premier League match from 2000-01 to 2025-26, built a model, and tested it fairly against real bookmakers.",
+  "number": 1
+ },
+ {
+  "kind": "stats",
+  "kicker": "The problem",
+  "title": "Football is hard to predict",
+  "stats": [
+   {
+    "value": "45.7%",
+    "label": "of matches are home wins"
+   },
+   {
+    "value": "24.8%",
+    "label": "end in a draw"
+   },
+   {
+    "value": "29.5%",
+    "label": "are away wins"
+   }
+  ],
+  "body": [
+   "Only 2.72 goals per match, so one lucky goal changes the result",
+   "Any model must beat the simple rule \"always pick the home team\""
+  ],
+  "notes": "Over 26 seasons, home teams won 45.7% of matches, a quarter were draws and about 30% were away wins. Football has few goals, so luck matters a lot. The simplest possible rule, always pick the home team, is already right 44.4% of the time in our test seasons. Our model has to beat that.",
+  "number": 2
+ },
+ {
+  "kind": "cards",
+  "kicker": "Data",
+  "title": "Real data from published sources",
+  "cards": [
+   {
+    "title": "9,880 league matches",
+    "text": "Football-Data.co.uk, 2000-01 to 2025-26: scores, shots, corners, cards"
+   },
+   {
+    "title": "253,781 player rows",
+    "text": "Fantasy Premier League, 2016-17 onwards: minutes, starts, influence"
+   },
+   {
+    "title": "4,207 cup & European games",
+    "text": "engsoccerdata + openfootball: FA Cup, League Cup, Champions League, Europa League"
+   },
+   {
+    "title": "25,244 internationals",
+    "text": "martj42/international_results: to find international breaks"
+   }
+  ],
+  "body": [
+   "Bookmaker odds (98% of matches) are only used to compare against, never as an input"
+  ],
+  "notes": "Everything comes from public datasets that anyone can download, listed with their licences in SOURCES.md and on the Data page of our website. The script checks the data automatically: 380 matches every season, no duplicates, and every result agrees with the score. Bookmaker odds are only a benchmark.",
+  "number": 3
+ },
+ {
+  "kind": "statement",
+  "kicker": "Rule number one",
+  "title": "No cheating: only what is known before kick-off",
+  "body": [
+   "Wrong: using this match's shots to predict this match's result",
+   "Right: using shots from the team's previous matches",
+   "An automatic test changes results and checks that no earlier input moves"
+  ],
+  "notes": "The most common mistake in football prediction projects is called data leakage: accidentally using information from the match you are predicting, like its number of shots. That gives amazing scores that are fake. Our first version of this project had this problem. Now every input is calculated only from earlier matches, and an automatic test proves it.",
+  "number": 4
+ },
+ {
+  "kind": "cards",
+  "kicker": "Features",
+  "title": "What the model looks at: 49 inputs",
+  "cards": [
+   {
+    "title": "Elo rating",
+    "text": "One strength number per team, updated after every match"
+   },
+   {
+    "title": "Recent form",
+    "text": "Points per game in the last 5 matches, home and away"
+   },
+   {
+    "title": "Attack & defence",
+    "text": "Goals, shots and shots on target, recent games count more"
+   },
+   {
+    "title": "League table",
+    "text": "Position, points per game and goal difference so far"
+   },
+   {
+    "title": "Last season",
+    "text": "Final position, or newly promoted"
+   },
+   {
+    "title": "Players",
+    "text": "Strength of the expected starting eleven (FPL influence)"
+   }
+  ],
+  "notes": "These are the inputs, called features. The most important is the Elo rating: a single number for how strong a team is, which goes up when it wins and down when it loses. We also use recent form, how many goals and shots a team makes and allows, its league position, last season's finish, and from 2016 the quality of its starting eleven from Fantasy Premier League data.",
+  "number": 5
+ },
+ {
+  "kind": "chart",
+  "kicker": "Elo rating",
+  "title": "One number tells the story of the league",
+  "chart": {
+   "type": "line",
+   "format": "number",
+   "min": 1350,
+   "max": 1750,
+   "categories": [
+    "01-02",
+    "02-03",
+    "03-04",
+    "04-05",
+    "05-06",
+    "06-07",
+    "07-08",
+    "08-09",
+    "09-10",
+    "10-11",
+    "11-12",
+    "12-13",
+    "13-14",
+    "14-15",
+    "15-16",
+    "16-17",
+    "17-18",
+    "18-19",
+    "19-20",
+    "20-21",
+    "21-22",
+    "22-23",
+    "23-24",
+    "24-25",
+    "25-26"
+   ],
+   "series": [
+    {
+     "name": "Manchester City",
+     "values": [
+      null,
+      1457,
+      1450,
+      1491,
+      1459,
+      1438,
+      1464,
+      1460,
+      1530,
+      1552,
+      1631,
+      1624,
+      1653,
+      1633,
+      1578,
+      1587,
+      1665,
+      1687,
+      1649,
+      1636,
+      1658,
+      1664,
+      1662,
+      1589,
+      1592
+     ],
+     "color": "home"
+    },
+    {
+     "name": "Liverpool",
+     "values": [
+      1621,
+      1598,
+      1578,
+      1538,
+      1600,
+      1599,
+      1612,
+      1657,
+      1596,
+      1556,
+      1517,
+      1527,
+      1600,
+      1554,
+      1522,
+      1555,
+      1579,
+      1648,
+      1661,
+      1595,
+      1643,
+      1580,
+      1586,
+      1603,
+      1524
+     ],
+     "color": "away"
+    },
+    {
+     "name": "Arsenal",
+     "values": [
+      1639,
+      1644,
+      1683,
+      1684,
+      1626,
+      1607,
+      1636,
+      1619,
+      1607,
+      1590,
+      1577,
+      1587,
+      1590,
+      1598,
+      1581,
+      1575,
+      1533,
+      1529,
+      1504,
+      1502,
+      1501,
+      1551,
+      1600,
+      1582,
+      1590
+     ],
+     "color": "aqua"
+    },
+    {
+     "name": "Chelsea",
+     "values": [
+      1577,
+      1578,
+      1610,
+      1685,
+      1696,
+      1678,
+      1676,
+      1666,
+      1672,
+      1630,
+      1565,
+      1585,
+      1618,
+      1632,
+      1544,
+      1614,
+      1576,
+      1552,
+      1518,
+      1529,
+      1544,
+      1449,
+      1473,
+      1490,
+      1454
+     ],
+     "color": "violet"
+    },
+    {
+     "name": "Manchester United",
+     "values": [
+      1628,
+      1658,
+      1623,
+      1630,
+      1643,
+      1684,
+      1682,
+      1679,
+      1670,
+      1651,
+      1658,
+      1664,
+      1589,
+      1578,
+      1546,
+      1559,
+      1586,
+      1549,
+      1538,
+      1554,
+      1500,
+      1514,
+      1468,
+      1396,
+      1468
+     ],
+     "color": "muted"
+    }
+   ]
+  },
+  "body": [
+   "Elo expected score = 1 / (1 + 10^(−(home + 50 − away) / 400))"
+  ],
+  "notes": "This chart shows our own Elo ratings at the end of every season. You can see real football history: Chelsea rising after 2004, Manchester United under Ferguson, Manchester City from 2011, Liverpool under Klopp. The formula turns the gap between two ratings into an expected score; the home team gets 50 extra points for home advantage.",
+  "number": 6
+ },
+ {
+  "kind": "cards",
+  "kicker": "Models",
+  "title": "Seven models, from simple to complex",
+  "cards": [
+   {
+    "title": "Always home win",
+    "text": "The baseline to beat"
+   },
+   {
+    "title": "Elo only",
+    "text": "Just the rating difference"
+   },
+   {
+    "title": "Logistic regression",
+    "text": "A weighted sum of all inputs"
+   },
+   {
+    "title": "Random forest",
+    "text": "500 decision trees vote"
+   },
+   {
+    "title": "Gradient boosting",
+    "text": "Trees that fix each other's mistakes"
+   },
+   {
+    "title": "Poisson goals model",
+    "text": "Predicts goals, then turns goals into results"
+   }
+  ],
+  "body": [
+   "Plus an ensemble that averages three of them. Settings were tuned on 2010-2014 only"
+  ],
+  "notes": "We compared seven models. Every model outputs three probabilities, for home win, draw and away win. The model settings were chosen using only the seasons 2010 to 2014, so the test seasons stayed unseen.",
+  "number": 7
+ },
+ {
+  "kind": "steps",
+  "kicker": "Fair testing",
+  "title": "Walk-forward: predict each season from the past",
+  "steps": [
+   {
+    "title": "Train",
+    "text": "On every season before the test season (e.g. 2001-02 to 2013-14)"
+   },
+   {
+    "title": "Predict",
+    "text": "All 380 matches of the next season, before seeing any of them"
+   },
+   {
+    "title": "Repeat",
+    "text": "For 12 seasons: 4,560 test matches in total"
+   }
+  ],
+  "notes": "To test fairly, we copied real life. To predict a season, the model only learns from the seasons before it, then predicts all 380 matches. We repeated this for 12 seasons, so we have 4,560 honest test predictions. The original project tested on only 38 matches.",
+  "number": 8
+ },
+ {
+  "kind": "steps",
+  "kicker": "One prediction, step by step",
+  "title": "Arsenal vs Chelsea",
+  "steps": [
+   {
+    "title": "1 · Expected goals",
+    "text": "Arsenal 1.95, Chelsea 0.78 (average match: 1.47 and 1.13)"
+   },
+   {
+    "title": "2 · Poisson",
+    "text": "Chance of each number of goals, e.g. Arsenal scores exactly 2: 27.0%"
+   },
+   {
+    "title": "3 · Add up scores",
+    "text": "Arsenal win 65% · draw 21% · Chelsea win 14%"
+   }
+  ],
+  "notes": "Here is how one prediction is made, for Arsenal at home to Chelsea. Step one: the model starts from an average match, 1.47 goals for the home team, and each input multiplies that up or down. Arsenal end up with 1.95 expected goals and Chelsea 0.78. Step two: a Poisson distribution turns expected goals into the chance of scoring 0, 1, 2 or more goals. Step three: multiply the two to get every exact score, and add up the scores where the home team has more goals. The website shows every number of this calculation.",
+  "number": 9
+ },
+ {
+  "kind": "chart",
+  "kicker": "Results",
+  "title": "Poisson goals model: 53.6% accuracy",
+  "chart": {
+   "type": "bar",
+   "horizontal": true,
+   "format": "percent",
+   "categories": [
+    "Bookmaker (Bet365)",
+    "Poisson goals model",
+    "Ensemble (LR + GB + Poisson)",
+    "Logistic regression",
+    "Random forest",
+    "Gradient boosting",
+    "Elo only",
+    "Always home win"
+   ],
+   "values": [
+    0.5473684210526316,
+    0.5364035087719298,
+    0.5342105263157895,
+    0.5339912280701754,
+    0.5339912280701754,
+    0.5337719298245615,
+    0.5333333333333333,
+    0.4440789473684211
+   ],
+   "highlight": {
+    "Poisson goals model": "home",
+    "Bookmaker (Bet365)": "away"
+   },
+   "min": 0,
+   "max": 0.6
+  },
+  "body": [
+   "Always home win: 44.4% · Bookmaker: 54.7% · 4,560 test matches"
+  ],
+  "notes": "These are the results on 4,560 test matches. All our models beat the baseline of 44.4% by about 9 points. The best was the Poisson goals model with 53.6%. The bookmaker, which is a professional company with much more information, gets 54.7%. Elo alone already gets 53.3%, so team strength is most of the story.",
+  "number": 10
+ },
+ {
+  "kind": "chart",
+  "kicker": "Season by season",
+  "title": "Close to the bookmaker every season",
+  "chart": {
+   "type": "line",
+   "format": "percent",
+   "min": 0.35,
+   "max": 0.65,
+   "categories": [
+    "2014-15",
+    "2015-16",
+    "2016-17",
+    "2017-18",
+    "2018-19",
+    "2019-20",
+    "2020-21",
+    "2021-22",
+    "2022-23",
+    "2023-24",
+    "2024-25",
+    "2025-26"
+   ],
+   "series": [
+    {
+     "name": "Poisson goals model",
+     "values": [
+      0.531578947368421,
+      0.4578947368421052,
+      0.5894736842105263,
+      0.5421052631578948,
+      0.5736842105263158,
+      0.5368421052631579,
+      0.5052631578947369,
+      0.5789473684210527,
+      0.5421052631578948,
+      0.5763157894736842,
+      0.5236842105263158,
+      0.4789473684210526
+     ],
+     "color": "home"
+    },
+    {
+     "name": "Bookmaker (Bet365)",
+     "values": [
+      0.5368421052631579,
+      0.4736842105263157,
+      0.6105263157894737,
+      0.5526315789473685,
+      0.5868421052631579,
+      0.531578947368421,
+      0.5157894736842106,
+      0.5789473684210527,
+      0.5605263157894737,
+      0.5894736842105263,
+      0.5421052631578948,
+      0.4894736842105263
+     ],
+     "color": "away"
+    },
+    {
+     "name": "Always home win",
+     "values": [
+      0.4526315789473684,
+      0.4131578947368421,
+      0.4921052631578947,
+      0.4552631578947368,
+      0.4763157894736842,
+      0.4526315789473684,
+      0.3789473684210526,
+      0.4289473684210526,
+      0.4842105263157895,
+      0.4605263157894737,
+      0.4078947368421052,
+      0.4263157894736842
+     ],
+     "color": "muted",
+     "dashed": true
+    }
+   ]
+  },
+  "body": [
+   "Hardest: 2015-16 (45.8%) · easiest: 2016-17 (58.9%)"
+  ],
+  "notes": "Here is accuracy in every test season. Our model, in blue, follows the bookmaker, in red, closely. 2015-16 was very hard for everyone: Leicester won the league as 5000-1 outsiders. In 2020-21 matches were played without fans because of COVID-19, and away teams won more often than home teams (40.3% vs 37.9%).",
+  "number": 11
+ },
+ {
+  "kind": "table",
+  "kicker": "Evaluation",
+  "title": "Precision, recall and F1 score",
+  "table": {
+   "columns": [
+    "Outcome",
+    "Precision",
+    "Recall",
+    "F1 score",
+    "Matches"
+   ],
+   "rows": [
+    [
+     "Home win",
+     "0.56",
+     "0.80",
+     "0.65",
+     "1,336"
+    ],
+    [
+     "Draw",
+     "0.00",
+     "0.00",
+     "0.00",
+     "700"
+    ],
+    [
+     "Away win",
+     "0.52",
+     "0.59",
+     "0.55",
+     "1,004"
+    ],
+    [
+     "Accuracy",
+     "",
+     "",
+     "0.544",
+     "3,040"
+    ]
+   ]
+  },
+  "body": [
+   "Draw recall is 0.00: a draw is almost never the single most likely result",
+   "Precision: when it picks X, how often is it right? Recall: of all real X, how many did it pick?"
+  ],
+  "notes": "This is the classification report of the model our website uses. Precision means: when the model picks a home win, how often is it right. Recall means: of all real home wins, how many did it find. F1 combines both. Home wins have the best scores. Draws score zero: 23% of matches are draws, but a draw is almost never the most likely single result, so the model never picks one. The bookmaker has exactly the same problem.",
+  "number": 12
+ },
+ {
+  "kind": "stats",
+  "kicker": "Probability quality",
+  "title": "Judging the probabilities, not just the pick",
+  "stats": [
+   {
+    "value": "0.968",
+    "label": "Log loss (bookmaker 0.959, guessing 1.099)"
+   },
+   {
+    "value": "0.1998",
+    "label": "RPS (bookmaker 0.1966, always home 0.2349)"
+   },
+   {
+    "value": "0.670",
+    "label": "AUC (0.5 = guessing, 1 = perfect)"
+   }
+  ],
+  "body": [
+   "Lower log loss and RPS are better; the probabilities are well calibrated (60% happens about 60% of the time)"
+  ],
+  "notes": "Accuracy only checks the single pick. These scores judge the full probabilities. Log loss punishes confident mistakes. RPS, the ranked probability score, is the standard in football research because it knows that a draw is between a home and an away win. AUC says how well the model separates outcomes. On all of them we are close to the bookmaker and far better than guessing.",
+  "number": 13
+ },
+ {
+  "kind": "chart",
+  "kicker": "Extra data",
+  "title": "Players help a little, fatigue does not",
+  "chart": {
+   "type": "bar",
+   "horizontal": true,
+   "format": "percent",
+   "min": 0,
+   "max": 0.6,
+   "categories": [
+    "Base features",
+    "+ fatigue",
+    "+ players",
+    "Bookmaker"
+   ],
+   "values": [
+    0.5388157894736842,
+    0.5351973684210526,
+    0.5440789473684211,
+    0.5493421052631579
+   ],
+   "highlight": {
+    "+ players": "home",
+    "Bookmaker": "away"
+   }
+  },
+  "body": [
+   "Test seasons 2018-19 to 2025-26 · RPS with players 0.1998 vs 0.2007 without"
+  ],
+  "notes": "We tested whether more data helps. Adding cup, European and international match dates, to measure tiredness, made no difference: 53.5% instead of 53.9%. Adding who is in the starting eleven helped a little: 54.4%. So our final model uses the base features plus the player features.",
+  "number": 14
+ },
+ {
+  "kind": "table",
+  "kicker": "Version 1 → version 2",
+  "title": "What we improved",
+  "table": {
+   "columns": [
+    "",
+    "Version 1",
+    "Version 2"
+   ],
+   "rows": [
+    [
+     "Data",
+     "1 season (288 matches)",
+     "26 seasons (9,880)"
+    ],
+    [
+     "Extra data",
+     "~2,500 generated rows",
+     "None: all real"
+    ],
+    [
+     "Cheating (leakage)",
+     "Yes",
+     "No, tested automatically"
+    ],
+    [
+     "Test matches",
+     "38",
+     "4,560"
+    ],
+    [
+     "Accuracy on the test",
+     "47.5% (on 38)",
+     "53.6% (on 4,560)"
+    ]
+   ]
+  },
+  "notes": "Our first version used one season, some generated data and leaked future information, and it was tested on only 38 matches. On those same 38 matches, version 2 scores much higher, but even always picking the home team scores well, which shows 38 matches is too few to judge a model.",
+  "number": 15
+ },
+ {
+  "kind": "cards",
+  "kicker": "Limitations",
+  "title": "What could be better",
+  "cards": [
+   {
+    "title": "Team news",
+    "text": "Injuries and confirmed line-ups: the main reason bookmakers are better"
+   },
+   {
+    "title": "Draws",
+    "text": "Still almost impossible to pick"
+   },
+   {
+    "title": "Missing data",
+    "text": "Europa League before 2020-21, managers not yet included"
+   },
+   {
+    "title": "Next steps",
+    "text": "Expected goals (xG) data, simulating a whole season's table"
+   }
+  ],
+  "notes": "Our model does not know about injuries or the confirmed line-up, which is the biggest reason the bookmaker is still slightly better. Draws stay very hard. Some data is missing from free sources. Next we would add expected-goals data and simulate whole seasons to predict the final table.",
+  "number": 16
+ },
+ {
+  "kind": "closing",
+  "kicker": "Conclusion",
+  "title": "What we learned",
+  "body": [
+   "A fair model reaches 53.6%, close to the bookmaker's 54.7%",
+   "Team strength (Elo) matters most; a simple Poisson model beat complex ones",
+   "Testing properly matters more than a fancy model"
+  ],
+  "notes": "To conclude: with real data and a fair test, our model predicts Premier League results about as well as we could expect, within about one percentage point of a professional bookmaker. Team strength is the most important information, and a simple model beat the complex ones. Most of all, we learned that testing honestly matters more than using a fancy model. Thank you, we are happy to take questions, and we can show the live website.",
+  "number": 17
+ },
+ {
+  "kind": "sources",
+  "kicker": "Sources",
+  "title": "Data and references",
+  "body": [
+   "Football-Data.co.uk via DataHub football-datasets (PDDL)",
+   "Fantasy Premier League data, Vaastav Anand (MIT)",
+   "engsoccerdata, James Curley (GPL-2+) · openfootball (CC0)",
+   "International results, Mart Jürisoo (CC0)",
+   "Bet365 odds via Club Football Match Data, Adam Gábor (MIT)",
+   "Elo (1978) · Maher (1982) · Dixon & Coles (1997)",
+   "Hvattum & Arntzen (2010) · Constantinou & Fenton (2012)"
+  ],
+  "notes": "All sources and references are listed here and in SOURCES.md, with full citations.",
+  "number": 18
+ }
+]

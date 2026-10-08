@@ -11,3 +11,4 @@ __pycache__/
 data/processed/features.csv
 .gradio/
 data/processed/features_extended.csv
+node_modules/

@@ -22,6 +22,8 @@
         <a href="#evaluation" data-view="evaluation">Evaluation</a>
         <a href="#seasons" data-view="seasons">Seasons</a>
         <a href="#data" data-view="data">Data</a>
+        <a href="#report" data-view="report">Report</a>
+        <a href="#slides" data-view="slides">Slides</a>
         <a href="#about" data-view="about">About</a>
       </nav>
     </div>
@@ -335,6 +337,47 @@
             <button type="button" class="button secondary inline" id="data-next" aria-label="Next page">›</button>
           </span>
         </div>
+      </div>
+    </section>
+
+    <!-- ============================== REPORT ============================== -->
+    <section class="view" id="view-report" data-view="report" hidden>
+      <div class="hero">
+        <p class="eyebrow">Report</p>
+        <h1 class="display">The written report</h1>
+        <p class="lede">Everything in plain English, ready to hand in. It's rebuilt from the latest results, so every number matches the rest of the site.</p>
+        <div class="hero-actions">
+          <button type="button" class="button inline" id="print-report">Print or save as PDF</button>
+          <a class="button secondary inline" href="/downloads/REPORT.md" download>Download Markdown</a>
+        </div>
+      </div>
+      <div class="report-layout">
+        <nav class="report-toc card" id="report-toc" aria-label="Report contents"></nav>
+        <article class="card report-doc" id="report"></article>
+      </div>
+    </section>
+
+    <!-- ============================== SLIDES ============================== -->
+    <section class="view" id="view-slides" data-view="slides" hidden>
+      <div class="hero">
+        <p class="eyebrow">Slides</p>
+        <h1 class="display">Present it</h1>
+        <p class="lede">The presentation, with what to say on every slide. Use ← → to move, and Present for full screen.</p>
+        <div class="hero-actions">
+          <button type="button" class="button inline" id="present">Present</button>
+          <a class="button secondary inline" href="/downloads/slides.pptx" download>Download PowerPoint</a>
+        </div>
+      </div>
+      <div class="deck" id="deck">
+        <div class="stage" id="stage" tabindex="0" aria-roledescription="slide" aria-live="polite"></div>
+        <div class="deck-controls">
+          <button type="button" class="button secondary inline" id="slide-prev" aria-label="Previous slide">‹</button>
+          <span class="muted" id="slide-count"></span>
+          <button type="button" class="button secondary inline" id="slide-next" aria-label="Next slide">›</button>
+          <label class="notes-toggle"><input type="checkbox" id="notes-toggle" checked> Speaker notes</label>
+        </div>
+        <div class="card notes" id="slide-notes"></div>
+        <ol class="slide-strip" id="slide-strip"></ol>
       </div>
     </section>
 

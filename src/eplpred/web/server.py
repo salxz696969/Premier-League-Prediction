@@ -14,6 +14,10 @@ URLs
 /api/evaluation           every evaluation metric (precision, recall, F1, AUC, ...)
 /api/seasons              list of seasons
 /api/season?label=2019-20 league table (+ predictions for test seasons)
+/api/story                report (HTML) and slides, from the current results
+/figures/<name>.png       the charts in reports/figures
+/downloads/slides.pptx    the slides as PowerPoint (docs/slides.pptx)
+/downloads/REPORT.md      the report as Markdown (docs/REPORT.md)
 /api/datasets             every dataset the project uses (source, licence, file)
 /api/data?dataset=...     one page of rows (filters: q, season, team; sort, dir, page, size)
 /api/data.csv?dataset=... the same rows as a CSV download
@@ -32,9 +36,16 @@ from urllib.parse import parse_qs
 import numpy as np
 from waitress import create_server
 
+from .. import config
 from .api import ProjectData
 
 STATIC_DIR = Path(__file__).parent / "static"
+FIGURES_DIR = config.FIGURES_DIR
+DOCS_DIR = config.ROOT / "docs"
+DOWNLOADS = {
+    "slides.pptx": "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+    "REPORT.md": "text/markdown",
+}
 
 
 def _json_default(value):
@@ -54,6 +65,7 @@ def make_application(project: ProjectData):
         "/api/evaluation": lambda q: project.evaluation(),
         "/api/seasons": lambda q: project.seasons(),
         "/api/season": lambda q: project.season(q["label"][0]),
+        "/api/story": lambda q: project.story(),
         "/api/datasets": lambda q: project.explorer.catalogue(),
         "/api/data": lambda q: project.explorer.page(q["dataset"][0], q),
     }
@@ -66,7 +78,21 @@ def make_application(project: ProjectData):
             extra_headers.append(("Allow", "GET, HEAD"))
         else:
             path_name = environ.get("PATH_INFO", "/")
-            if path_name == "/api/data.csv":
+            # Charts (reports/figures) and the downloadable report / slides (docs/)
+            file_dirs = {"/figures/": (FIGURES_DIR, None), "/downloads/": (DOCS_DIR, DOWNLOADS)}
+            prefix = next((p_ for p_ in file_dirs if path_name.startswith(p_)), None)
+            if prefix:
+                folder, allowed = file_dirs[prefix]
+                name = path_name[len(prefix):]
+                path = (folder / name).resolve()
+                if (allowed is not None and name not in allowed) or not path.is_file() or folder.resolve() not in path.parents:
+                    status, body, content_type = HTTPStatus.NOT_FOUND, b"Not found", "text/plain"
+                else:
+                    status, body = HTTPStatus.OK, path.read_bytes()
+                    content_type = DOWNLOADS.get(name) or mimetypes.guess_type(path.name)[0] or "application/octet-stream"
+                    if prefix == "/downloads/":
+                        extra_headers.append(("Content-Disposition", f'attachment; filename="{name}"'))
+            elif path_name == "/api/data.csv":
                 query = parse_qs(environ.get("QUERY_STRING", ""))
                 try:
                     key = query["dataset"][0]
@@ -91,7 +117,7 @@ def make_application(project: ProjectData):
                     status, body = HTTPStatus.OK, path.read_bytes()
                     content_type = mimetypes.guess_type(path.name)[0] or "application/octet-stream"
         start_response(f"{status.value} {status.phrase}", [
-            ("Content-Type", f"{content_type}; charset=utf-8"),
+            ("Content-Type", f"{content_type}; charset=utf-8" if content_type.startswith(("text/", "application/json", "application/javascript")) else content_type),
             ("Content-Length", str(len(body))),
             ("Cache-Control", "no-store"),
             *extra_headers,

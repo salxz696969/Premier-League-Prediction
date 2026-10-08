@@ -93,8 +93,8 @@ function roundedBar(x, y, w, h, r = 4) {
 
 /* Horizontal bar chart: rows = [{label, value, color, tip}].
    In narrow containers the label sits above its bar so it's never cut off. */
-function hbars(container, rows, { format = (v) => v, domain, labelWidth = 200, rowHeight = 34, ariaLabel = "" } = {}) {
-  const stacked = container.clientWidth < 560;
+function hbars(container, rows, { format = (v) => v, domain, labelWidth = 200, rowHeight = 34, ariaLabel = "", allowStack = true } = {}) {
+  const stacked = allowStack && container.clientWidth < 560;
   const rowH = stacked ? 40 : rowHeight;
   const height = rows.length * rowH + 8;
   const { svg, width } = svgFor(container, height);
@@ -116,6 +116,12 @@ function hbars(container, rows, { format = (v) => v, domain, labelWidth = 200, r
     } else {
       const label = el("text", { x: labelWidth - 12, y: y + rowH / 2, "text-anchor": "end", "dominant-baseline": "middle" }, g);
       label.textContent = r.label;
+      // Shorten labels that don't fit their column (e.g. small slides)
+      const room = labelWidth - 14;
+      if (label.getComputedTextLength && label.getComputedTextLength() > room) {
+        let t = r.label;
+        while (t.length > 3 && label.getComputedTextLength() > room) { t = t.slice(0, -1); label.textContent = `${t.trimEnd()}…`; }
+      }
       el("path", { d: roundedBar(labelWidth, y + 7, w, rowH - 14), fill: r.color, class: "bar" }, g);
       const vt = el("text", { x: labelWidth + w + 8, y: y + rowH / 2, "dominant-baseline": "middle", class: "value-label" }, g);
       vt.textContent = format(r.value);
@@ -203,7 +209,7 @@ function lineChart(container, series, { height = 300, yFormat = (v) => v, xTicks
 }
 
 /* ------------------------------------------------------------- router */
-const views = ["predict", "teams", "models", "evaluation", "seasons", "data", "about"];
+const views = ["predict", "teams", "models", "evaluation", "seasons", "data", "report", "slides", "about"];
 const loaded = new Set();
 let current = null;
 
@@ -226,7 +232,7 @@ function route() {
   window.scrollTo({ top: 0 });
   if (!loaded.has(name)) {
     loaded.add(name);
-    ({ predict: initPredict, teams: initTeams, models: initModels, evaluation: initEvaluation, seasons: initSeasons, data: initData, about: async () => {} })[name]().catch((err) => toast(err.message));
+    ({ predict: initPredict, teams: initTeams, models: initModels, evaluation: initEvaluation, seasons: initSeasons, data: initData, report: initReport, slides: initSlides, about: async () => {} })[name]().catch((err) => toast(err.message));
   } else {
     redraw[name]?.();
   }
@@ -993,6 +999,159 @@ function renderTable() {
   $("#data-next").disabled = r.page >= r.pages - 1;
   $("#data-download").href = `/api/data.csv?${dataQuery()}`;
   $("#data-download").textContent = `Download CSV (${r.matching.toLocaleString("en")} rows)`;
+}
+
+/* -------------------------------------------------------- report/slides */
+let storyPromise;
+const story = () => (storyPromise ??= api("/api/story"));
+
+async function initReport() {
+  const st = await story();
+  const article = $("#report");
+  article.innerHTML = st.report_html;
+  article.querySelectorAll("img").forEach((img) => { img.loading = "lazy"; img.decoding = "async"; });
+  article.querySelectorAll("table").forEach((t) => {
+    const wrap = document.createElement("div");
+    wrap.className = "table-wrap";
+    t.parentNode.insertBefore(wrap, t);
+    wrap.appendChild(t);
+    t.classList.add("table", "report-table");
+    // Right-align columns that only contain numbers
+    const rows = [...t.rows];
+    for (let c = 0; c < (rows[0]?.cells.length || 0); c++) {
+      const cells = rows.slice(1).map((r) => r.cells[c]).filter(Boolean);
+      const numeric = cells.length && cells.every((td) => /^[\s×≈\-–+]*[\d.,]+\s*%?\s*(\(.*\))?$/.test(td.textContent.trim()) || !td.textContent.trim());
+      if (numeric) rows.forEach((r) => r.cells[c]?.classList.add("num"));
+    }
+  });
+  const heads = [...article.querySelectorAll("h2")];
+  $("#report-toc").innerHTML = `<p class="section-label">Contents</p><ul>${heads.map((h) => `<li><a href="#report" data-target="${h.id}">${esc(h.textContent)}</a></li>`).join("")}</ul>`;
+  $("#report-toc").addEventListener("click", (e) => {
+    const a = e.target.closest("a[data-target]");
+    if (!a) return;
+    e.preventDefault();
+    document.getElementById(a.dataset.target)?.scrollIntoView({ behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth", block: "start" });
+  });
+  $("#print-report").addEventListener("click", () => window.print());
+}
+
+let deck = [], slideIndex = 0;
+const slideColor = (c) => ({ home: css("--home"), away: css("--away"), muted: css("--draw"), aqua: "#1baf7a", violet: matchMedia("(prefers-color-scheme: dark)").matches ? "#8b7fe8" : "#4a3aa7" }[c] || css("--home"));
+
+async function initSlides() {
+  const st = await story();
+  deck = st.slides;
+  $("#slide-strip").innerHTML = deck.map((sl, i) => `<li><button type="button" data-i="${i}"><span class="n">${i + 1}</span>${esc(sl.title)}</button></li>`).join("");
+  $("#slide-strip").addEventListener("click", (e) => { const b = e.target.closest("button[data-i]"); if (b) showSlide(+b.dataset.i); });
+  $("#slide-prev").addEventListener("click", () => showSlide(slideIndex - 1));
+  $("#slide-next").addEventListener("click", () => showSlide(slideIndex + 1));
+  $("#notes-toggle").addEventListener("change", () => { $("#slide-notes").hidden = !$("#notes-toggle").checked; });
+  $("#present").addEventListener("click", () => {
+    const stage = $("#stage");
+    (stage.requestFullscreen || stage.webkitRequestFullscreen)?.call(stage);
+    stage.focus();
+  });
+  document.addEventListener("fullscreenchange", () => showSlide(slideIndex));
+  $("#stage").addEventListener("click", (e) => {
+    if (!document.fullscreenElement) return;
+    const r = e.currentTarget.getBoundingClientRect();
+    showSlide(slideIndex + (e.clientX > r.left + r.width / 3 ? 1 : -1));
+  });
+  document.addEventListener("keydown", (e) => {
+    if (current !== "slides" || e.target.closest("input, select, textarea")) return;
+    const next = ["ArrowRight", "PageDown", " "].includes(e.key), prev = ["ArrowLeft", "PageUp"].includes(e.key);
+    if (next || prev || e.key === "Home" || e.key === "End") {
+      e.preventDefault();
+      showSlide(e.key === "Home" ? 0 : e.key === "End" ? deck.length - 1 : slideIndex + (next ? 1 : -1));
+    }
+  });
+  redraw.slides = () => showSlide(slideIndex);
+  showSlide(0);
+}
+
+function showSlide(i) {
+  slideIndex = Math.max(0, Math.min(deck.length - 1, i));
+  const sl = deck[slideIndex];
+  const stage = $("#stage");
+  stage.innerHTML = slideHTML(sl);
+  stage.setAttribute("aria-label", `Slide ${slideIndex + 1} of ${deck.length}: ${sl.title}`);
+  stage.querySelector(".sl")?.classList.add("enter");
+  $("#slide-count").textContent = `${slideIndex + 1} / ${deck.length}`;
+  $("#slide-prev").disabled = slideIndex === 0;
+  $("#slide-next").disabled = slideIndex === deck.length - 1;
+  $("#slide-notes").innerHTML = `<p class="section-label">What to say</p><p>${esc(sl.notes || "")}</p>`;
+  $$("#slide-strip button").forEach((b) => b.setAttribute("aria-current", +b.dataset.i === slideIndex ? "true" : "false"));
+  $(`#slide-strip button[data-i="${slideIndex}"]`)?.scrollIntoView({ block: "nearest", inline: "nearest" });
+  const chartBox = stage.querySelector(".sl-chart-box");
+  if (chartBox && sl.chart) drawSlideChart(chartBox, sl.chart);
+}
+
+function slideHTML(sl) {
+  const dark = sl.kind === "title" || sl.kind === "closing";
+  const head = `<p class="sl-kicker">${esc(sl.kicker || "")}</p><h2 class="sl-title">${esc(sl.title)}</h2>`;
+  const body = (lines, cls = "") => (lines && lines.length ? `<ul class="sl-body ${cls}">${lines.map((t) => `<li>${esc(t)}</li>`).join("")}</ul>` : "");
+  let inner = "";
+  switch (sl.kind) {
+    case "title":
+      inner = `<div class="sl-center"><p class="sl-kicker">${esc(sl.kicker)}</p><h2 class="sl-hero">${esc(sl.title)}</h2><p class="sl-sub">${esc(sl.subtitle)}</p></div>`;
+      break;
+    case "closing":
+      inner = `${head}<ol class="sl-takeaways">${sl.body.map((t, i) => `<li><span class="sl-num">${i + 1}</span>${esc(t)}</li>`).join("")}</ol>`;
+      break;
+    case "stats":
+      inner = `${head}<div class="sl-stats">${sl.stats.map((x, i) => `<div class="sl-card"><span class="sl-stat ${i === 0 ? "accent" : ""}">${esc(x.value)}</span><span class="sl-label">${esc(x.label)}</span></div>`).join("")}</div>${body(sl.body)}`;
+      break;
+    case "cards":
+      inner = `${head}<div class="sl-cards c${sl.cards.length > 4 ? 3 : 2}">${sl.cards.map((c, i) => `<div class="sl-card"><p class="sl-card-title"><span class="sl-dot">${i + 1}</span>${esc(c.title)}</p><p class="sl-card-text">${esc(c.text)}</p></div>`).join("")}</div>${body(sl.body, "small")}`;
+      break;
+    case "statement": {
+      const marks = [["✗", "bad"], ["✓", "good"], ["✓", "accent"]];
+      inner = `${head}<div class="sl-points">${sl.body.map((t, i) => `<div class="sl-card sl-point"><span class="sl-mark ${marks[i][1]}">${marks[i][0]}</span>${esc(t)}</div>`).join("")}</div>`;
+      break;
+    }
+    case "chart":
+      inner = `${head}<div class="sl-chart"><div class="sl-card"><div class="legend sl-legend"></div><div class="chart sl-chart-box"></div></div>${body(sl.body)}</div>`;
+      break;
+    case "steps":
+      inner = `${head}<div class="sl-steps">${sl.steps.map((x, i) => `<div class="sl-card"><p class="sl-step-title">${esc(x.title)}</p><p class="sl-step-text">${esc(x.text)}</p></div>${i < sl.steps.length - 1 ? '<span class="sl-arrow">→</span>' : ""}`).join("")}</div>`;
+      break;
+    case "table":
+      {
+        const compare = sl.table.columns.length === 3;
+        const num = (i) => (!compare && i > 0 ? "num" : "");
+        inner = `${head}<div class="sl-table ${compare ? "compare" : ""}"><table><thead><tr>${sl.table.columns.map((c, i) => `<th class="${num(i)}">${esc(c)}</th>`).join("")}</tr></thead><tbody>${sl.table.rows.map((r) => `<tr>${r.map((c, i) => `<td class="${num(i)}">${esc(c)}</td>`).join("")}</tr>`).join("")}</tbody></table></div>${body(sl.body, "small")}`;
+      }
+      break;
+    case "sources":
+      inner = `${head}<div class="sl-card sl-sources">${body(sl.body)}</div>`;
+      break;
+  }
+  return `<div class="sl ${dark ? "dark" : ""} kind-${sl.kind}">${inner}<div class="sl-footer"><span>Premier League Predictor</span><span>${sl.number}</span></div></div>`;
+}
+
+function drawSlideChart(box, chart) {
+  const fmt = chart.format === "percent" ? (v) => pct(v, 1) : (v) => Math.round(v).toLocaleString("en");
+  if (chart.type === "bar") {
+    box.parentElement.querySelector(".sl-legend").remove();
+    // Rows share the box's height so the chart always fits inside the slide.
+    const rowHeight = Math.max(12, Math.min(40, (box.clientHeight - 10) / chart.categories.length));
+    hbars(box, chart.categories.map((c, i) => ({ label: c, value: chart.values[i], color: slideColor((chart.highlight || {})[c] || "muted") })), {
+      format: fmt, domain: [chart.min, chart.max], labelWidth: Math.min(220, box.clientWidth * 0.32), rowHeight,
+      ariaLabel: "Slide chart", allowStack: false,
+    });
+  } else {
+    const series = chart.series.map((sr) => ({
+      name: sr.name, color: slideColor(sr.color), dashed: sr.dashed,
+      points: sr.values.map((v, i) => (v == null ? null : { x: i, y: v })).filter(Boolean),
+    }));
+    box.parentElement.querySelector(".sl-legend").innerHTML = series.map((sr) => `<span><i class="${sr.dashed ? "dashed" : ""}" style="background:${sr.color}"></i>${esc(sr.name)}</span>`).join("");
+    lineChart(box, series, {
+      height: Math.max(60, box.clientHeight - 4 || 300), markers: chart.categories.length < 20, gapAfter: 1,
+      yDomain: [chart.min, chart.max], yFormat: chart.format === "percent" ? (v) => pct(v) : (v) => Math.round(v),
+      xTicks: chart.categories.map((_, i) => i), xTickFormat: (i) => chart.categories[i] ?? "",
+      tipTitle: (p) => chart.categories[p.x], ariaLabel: "Slide chart",
+    });
+  }
 }
 
 /* ---------------------------------------------------------------- boot */

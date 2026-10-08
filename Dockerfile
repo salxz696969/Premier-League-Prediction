@@ -18,8 +18,11 @@ COPY src ./src
 RUN uv sync --frozen --no-dev --python /usr/local/bin/python
 COPY app.py ./
 COPY data/processed/matches.csv ./data/processed/matches.csv
-COPY data/raw/players ./data/raw/players
+# All raw data (the Data page shows every source) and the charts, report and slides
+COPY data/raw ./data/raw
 COPY reports/*.csv ./reports/
+COPY reports/figures ./reports/figures
+COPY docs/REPORT.md docs/slides.json docs/slides.pptx ./docs/
 COPY scripts/02_build_features.py ./scripts/02_build_features.py
 # Generate features at build time; the runtime filesystem can stay read-only.
 RUN .venv/bin/python scripts/02_build_features.py
