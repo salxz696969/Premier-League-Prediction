@@ -1,0 +1,18 @@
+services:
+  app:
+    image: ${APP_IMAGE:?APP_IMAGE must identify a tested image}
+    restart: unless-stopped
+    ports:
+      - "${APP_PORT:-8000}:8000"
+    read_only: true
+    tmpfs:
+      - /tmp:size=128m,mode=1777
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
