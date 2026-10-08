@@ -45,3 +45,24 @@ def test_feature_columns_exclude_match_statistics():
                  "away_shots_on_target", "result", "home_ht_goals", "away_ht_goals",
                  "book_prob_H", "book_prob_D", "book_prob_A"}
     assert not forbidden & set(features.feature_columns())
+
+
+def test_player_features_do_not_use_the_match_itself():
+    """Changing players' influence in one day's matches must not change the
+    player features of that day (only the starting eleven may be used)."""
+    from eplpred import data, players
+
+    all_matches = data.load_matches()
+    recent = all_matches[all_matches["season"].between(2021, 2022)].reset_index(drop=True)
+    pm = players.load_player_matches(recent)
+    date = pm["date"].sort_values().iloc[len(pm) // 2]
+    changed = pm.copy()
+    on_day = changed["date"].eq(date)
+    changed.loc[on_day, ["influence", "ict_index"]] = 999.0
+
+    before = players.team_player_features(recent, pm)
+    after = players.team_player_features(recent, changed)
+    ids = recent.loc[recent["date"] <= date, "match_id"]
+    pd.testing.assert_frame_equal(before.loc[before.index.intersection(ids)], after.loc[after.index.intersection(ids)])
+    later = recent.loc[recent["date"] > date, "match_id"]
+    assert not before.loc[before.index.intersection(later)].equals(after.loc[after.index.intersection(later)])

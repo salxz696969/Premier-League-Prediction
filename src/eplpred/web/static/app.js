@@ -286,7 +286,6 @@ function renderPrediction(p) {
 
   const h = p.home_stats, a = p.away_stats;
   const pos = (v) => (v == null ? "–" : ordinal(Math.round(v)));
-  const last = (v, promoted) => (promoted ? "Promoted" : pos(v));
   const rows = [
     ["Elo rating", h.elo, a.elo, (v) => num(v, 0), 1],
     ["Points per game, last 5", h.form, a.form, (v) => num(v, 1), 1],
@@ -296,7 +295,10 @@ function renderPrediction(p) {
     ["Goals scored per game", h.goals_for, a.goals_for, (v) => num(v, 2), 1],
     ["Goals conceded per game", h.goals_against, a.goals_against, (v) => num(v, 2), -1],
     ["Share of shots on target", h.sot_share, a.sot_share, (v) => pct(v), 1],
-  ];
+    ["Starting XI strength (FPL influence)", h.xi_influence, a.xi_influence, (v) => num(v, 0), 1],
+    ["Starting XI price (FPL, £m)", h.xi_value, a.xi_value, (v) => num(v, 1), 1],
+    ["Top-5 players not starting", h.key_missing, a.key_missing, (v) => num(v, 0), -1],
+  ].filter((r) => r[1] != null || r[2] != null);
   const html = [`<div class="compare-row compare-head"><span class="home-ink">${esc(p.home)}</span><span class="label"></span><span class="v right away-ink">${esc(p.away)}</span></div>`];
   for (const [label, hv, av, fmt, dir] of rows) {
     const better = hv == null || av == null || hv === av ? 0 : (hv - av) * dir > 0 ? 1 : -1;
@@ -304,10 +306,25 @@ function renderPrediction(p) {
     html.push(`<div class="compare-row"><span class="v ${better === 1 ? "better home" : ""}">${f(hv)}</span><span class="label">${esc(label)}</span><span class="v right ${better === -1 ? "better away" : ""}">${f(av)}</span></div>`);
   }
   $("#compare").innerHTML = html.join("");
+  renderLineups(p);
   const h2h = p.h2h_meetings
     ? `Head-to-head: ${p.home} took ${num(p.h2h_home_ppg, 1)} points per game from the last ${p.h2h_meetings} meetings. `
     : "These teams haven't met recently. ";
   $("#predict-footnote").textContent = `${h2h}Model: ${p.model}, using data up to ${p.as_of}.`;
+}
+
+function renderLineups(p) {
+  const card = $("#lineup-card");
+  card.hidden = !p.home_lineup;
+  if (!p.home_lineup) return;
+  const max = Math.max(...[p.home_lineup, p.away_lineup].flatMap((l) => l.players.map((x) => x.influence_p90 || 0)));
+  const side = (team, l, cls) => `
+    <div class="lineup">
+      <p class="section-label ${cls}">${esc(team)}</p>
+      <ol>${l.players.map((x) => `<li><span class="pname">${esc(x.name)}</span><span class="track"><span class="fill ${cls}-fill" style="width:${((x.influence_p90 || 0) / max) * 100}%"></span></span><span class="num">${x.influence_p90 == null ? "new" : num(x.influence_p90, 1)}</span></li>`).join("")}</ol>
+      ${l.missing.length ? `<p class="missing">Not in this XI: ${l.missing.map(esc).join(", ")}</p>` : ""}
+    </div>`;
+  $("#lineups").innerHTML = side(p.home, p.home_lineup, "home") + side(p.away, p.away_lineup, "away");
 }
 
 /* --------------------------------------------------------------- teams */
@@ -484,6 +501,24 @@ function drawModels() {
     gapAfter: 0.5, tipTitle: (p) => `Predicted ≈ ${pct(p.x)}`,
     ariaLabel: "Calibration of home-win probabilities",
   });
+
+  // Extra data experiment (Poisson model, same test seasons)
+  if (d.extended) {
+    $("#extended-card").hidden = false;
+    const ext = d.extended.filter((r) => r.model === "Poisson goals model" || r.feature_set === "Bookmaker");
+    const label = (r) => (r.feature_set === "Bookmaker" ? "Bookmaker (Bet365)" : r.feature_set === "Base (49 features)" ? "Base features" : `Base ${r.feature_set}`);
+    hbars($("#extended-chart"), ext.map((r) => ({
+      label: label(r),
+      value: r.accuracy,
+      color: r.feature_set === "Bookmaker" ? css("--away") : r.feature_set.includes("Base") ? css("--draw") : css("--home"),
+      tip: `<strong>${esc(label(r))}</strong>${tipRow(null, "Accuracy", pct(r.accuracy, 1))}${tipRow(null, "RPS", r.rps.toFixed(4))}${
+        r.rps_change == null ? "" : tipRow(null, "RPS change", `${r.rps_change > 0 ? "+" : ""}${r.rps_change.toFixed(4)}`)}`,
+    })), { format: (v) => pct(v, 1), domain: [0, 0.6], labelWidth: 190, rowHeight: 30, ariaLabel: "Accuracy with extra data" });
+    const pl = ext.find((r) => r.feature_set === "+ players"), fa = ext.find((r) => r.feature_set === "+ fatigue");
+    $("#extended-note").textContent = pl && fa
+      ? `Player data helped a little (RPS ${pl.rps_change.toFixed(4)}, 95% range ${pl.rps_change_low.toFixed(4)} to ${pl.rps_change_high.toFixed(4)}). Fatigue data from cup, European and international matches did not (RPS +${fa.rps_change.toFixed(4)}). The app uses base + player features.`
+      : "";
+  }
 
   // Original comparison
   const orig = [...d.original].sort((a, b) => b.accuracy - a.accuracy);

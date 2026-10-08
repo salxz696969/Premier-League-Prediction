@@ -70,6 +70,15 @@
         <div class="loading-veil" aria-hidden="true"><span class="spinner"></span></div>
       </div>
 
+      <div class="card" id="lineup-card" hidden>
+        <div class="card-head">
+          <h2>Expected starting eleven</h2>
+          <p class="muted">Each player's FPL influence per 90 minutes over his last 15 games. The model adds these up to rate the whole team.</p>
+        </div>
+        <div class="lineups" id="lineups"></div>
+        <p class="footnote">Line-ups aren't announced until an hour before kick-off, so each team's 11 most-used starters from its last 5 league matches are assumed.</p>
+      </div>
+
       <div class="card">
         <div class="card-head">
           <h2>Why?</h2>
@@ -124,6 +133,11 @@
         <div class="card-head"><h2>Season by season</h2><p class="muted">Accuracy in each test season</p></div>
         <div class="legend" id="season-legend"></div>
         <div class="chart" id="season-chart"></div>
+      </div>
+      <div class="card" id="extended-card" hidden>
+        <div class="card-head"><h2>Does extra data help?</h2><p class="muted">Poisson model on 2018-19 to 2025-26, with extra data added to the 49 base features</p></div>
+        <div class="chart" id="extended-chart"></div>
+        <p class="footnote" id="extended-note"></p>
       </div>
       <div class="grid-2">
         <div class="card">
@@ -183,7 +197,7 @@
         <p class="lede">Four steps from raw data to a prediction, with one rule throughout: only use what was known before kick-off.</p>
       </div>
       <ol class="steps">
-        <li class="card step"><span class="step-n">1</span><div><h2>Data</h2><p>Every Premier League match from 2000-01 to 2025-26: results, shots, shots on target, corners, fouls and cards. Downloaded and checked automatically: 380 matches per season, no duplicates, every result agrees with its score.</p></div></li>
+        <li class="card step"><span class="step-n">1</span><div><h2>Data</h2><p>Every Premier League match from 2000-01 to 2025-26: results, shots, shots on target, corners, fouls and cards, checked automatically. Plus every FA Cup, League Cup, Champions League and Europa League match of these clubs, international breaks, and Fantasy Premier League player data from 2016-17.</p></div></li>
         <li class="card step"><span class="step-n">2</span><div><h2>Features</h2><p>49 inputs per match, all from <em>earlier</em> matches: Elo rating, form over the last 5 games, weighted goals and shots, league position, last season's finish, rest days and head-to-head. An automatic test changes results and checks that no earlier input moves.</p></div></li>
         <li class="card step"><span class="step-n">3</span><div><h2>Models</h2><p>Baseline, Elo only, logistic regression, random forest, gradient boosting, a Poisson goals model and an ensemble. Each one outputs a probability for home win, draw and away win.</p></div></li>
         <li class="card step"><span class="step-n">4</span><div><h2>Testing</h2><p>Walk-forward: to predict a season, train on all seasons before it. 12 test seasons, 4,560 matches. Bookmaker odds are the benchmark only and are never a model input.</p></div></li>
@@ -194,6 +208,9 @@
           <li><strong>Football-Data.co.uk</strong>: match results and statistics, 2000-01 to 2025-26. <a href="https://www.football-data.co.uk/englandm.php" target="_blank" rel="noopener">football-data.co.uk</a></li>
           <li><strong>DataHub football-datasets</strong>: mirror of the above (PDDL licence). <a href="https://github.com/datasets/football-datasets" target="_blank" rel="noopener">github.com/datasets/football-datasets</a></li>
           <li><strong>Club Football Match Data</strong> by Adam Gábor (MIT): Bet365 odds, benchmark only. <a href="https://github.com/xgabora/Club-Football-Match-Data-2000-2025" target="_blank" rel="noopener">github.com/xgabora</a></li>
+          <li><strong>Fantasy Premier League data</strong> by Vaastav Anand (MIT): player minutes, influence, ICT index and prices, 2016-17 onwards. <a href="https://github.com/vaastav/Fantasy-Premier-League" target="_blank" rel="noopener">github.com/vaastav</a></li>
+          <li><strong>engsoccerdata</strong> by James Curley (GPL-2+) and <strong>openfootball</strong> (CC0): FA Cup, League Cup, Champions League and Europa League fixtures. <a href="https://github.com/jalapic/engsoccerdata" target="_blank" rel="noopener">engsoccerdata</a> · <a href="https://github.com/openfootball" target="_blank" rel="noopener">openfootball</a></li>
+          <li><strong>International results</strong> by Mart Jürisoo (CC0): international break dates. <a href="https://github.com/martj42/international_results" target="_blank" rel="noopener">github.com/martj42</a></li>
           <li><strong>Elo, A. E. (1978)</strong>. <em>The Rating of Chessplayers, Past and Present</em>.</li>
           <li><strong>Hvattum &amp; Arntzen (2010)</strong>. Using ELO ratings for match result prediction in association football. <em>International Journal of Forecasting</em>.</li>
           <li><strong>Maher (1982)</strong>. Modelling association football scores. <em>Statistica Neerlandica</em>.</li>

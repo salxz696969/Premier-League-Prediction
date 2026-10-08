@@ -10,3 +10,4 @@ __pycache__/
 # features.csv is rebuilt in ~20 s by scripts/02_build_features.py
 data/processed/features.csv
 .gradio/
+data/processed/features_extended.csv

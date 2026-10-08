@@ -9,8 +9,15 @@ Everything this project uses or builds on, so you can cite it in a report.
 | 1 | **Football-Data.co.uk** (Joseph Buchdahl) | Results, half-time scores, shots, shots on target, corners, fouls, cards, referees for every Premier League match 2000-01 to 2025-26 | Free to download (see the site for terms) | https://www.football-data.co.uk/englandm.php |
 | 2 | **DataHub "football-datasets"** (GitHub mirror of source 1) | The season CSVs are downloaded from this mirror | Public Domain Dedication and License (PDDL) v1.0 | https://github.com/datasets/football-datasets |
 | 3 | **Club Football Match Data (2000-2025)** by Adam Gábor | Bet365 pre-match odds (originally from Football-Data.co.uk), used **only as a benchmark**, never as a model input | MIT | https://github.com/xgabora/Club-Football-Match-Data-2000-2025 |
+| 4 | **engsoccerdata** (James Curley) | FA Cup and League Cup dates 2000-01 to 2017-18, Champions League 2000-01 to 2010-11 (fatigue features) | GPL-2 or later | https://github.com/jalapic/engsoccerdata |
+| 5 | **openfootball** (football.db) | Champions League 2011-12 to 2025-26, Europa League 2020-21 to 2024-25, FA Cup and EFL Cup 2018-19 to 2024-25 | CC0 1.0 | https://github.com/openfootball/champions-league, https://github.com/openfootball/england |
+| 6 | **International football results** (Mart Jürisoo) | Dates of men's international matches, to find international breaks | CC0 1.0 | https://github.com/martj42/international_results |
+| 7 | **Fantasy Premier League historical data** (Vaastav Anand) | Player minutes, starts, FPL influence / ICT index and prices per match, 2016-17 to 2025-26 | MIT | https://github.com/vaastav/Fantasy-Premier-League |
+| 8 | **transfermarkt-datasets** (dcaribou on GitHub), *optional, not included yet* | Managers of both teams per match, 2012-13 onwards | CC0 1.0 | https://github.com/dcaribou/transfermarkt-datasets |
 
-The raw files are saved in `data/raw/` exactly as downloaded. `scripts/01_download_data.py` reproduces them.
+FPL's influence score comes from the Premier League's official Fantasy game (its ICT index is built on Opta match data). Football-Data.co.uk and Fantasy Premier League are the original sources behind rows 1–3 and 7.
+
+The raw files are saved in `data/raw/` exactly as downloaded (FPL and engsoccerdata files are trimmed to the columns and seasons used). `scripts/01_download_data.py` reproduces them.
 
 **Suggested citation for the data**
 

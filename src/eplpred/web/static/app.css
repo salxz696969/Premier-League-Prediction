@@ -615,3 +615,22 @@ select:focus-visible, button:focus-visible, a:focus-visible {
   .card, .tile { box-shadow: none; border: 1px solid var(--text); }
   .chrome { background: var(--bg); border-bottom-color: var(--text); }
 }
+
+/* Expected line-ups */
+.lineups { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+@media (max-width: 640px) { .lineups { grid-template-columns: minmax(0, 1fr); } }
+.lineup ol { list-style: none; margin: 0; padding: 0; }
+.lineup li {
+  display: grid; grid-template-columns: minmax(0, 1.4fr) 1fr 40px; gap: 10px; align-items: center;
+  padding: 5px 0; border-bottom: 1px solid var(--separator); font-size: 0.9375rem; font-variant-numeric: tabular-nums;
+}
+.lineup li:last-child { border-bottom: 0; }
+.lineup .pname { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.lineup .track { display: block; height: 6px; border-radius: 3px; background: var(--fill); overflow: hidden; }
+.lineup .fill { display: block; height: 100%; border-radius: 3px; }
+.lineup .home-fill { background: var(--home); }
+.lineup .away-fill { background: var(--away); }
+.lineup .num { text-align: right; color: var(--text-2); font-size: 0.875rem; }
+.lineup .section-label.home { color: var(--home); }
+.lineup .section-label.away { color: var(--away); }
+.lineup .missing { margin: 10px 0 0; font-size: 0.8125rem; color: var(--text-2); letter-spacing: 0; }
