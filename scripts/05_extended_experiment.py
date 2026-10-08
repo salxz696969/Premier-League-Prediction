@@ -6,8 +6,9 @@ in training too: 2018-19 ... 2025-26 (3,040 matches). Every model is trained
 on all earlier seasons; features that don't exist in early seasons are left
 missing (the models get a "missing" flag for them).
 
-Writes reports/extended_results.csv, reports/extended_by_season.csv and
-reports/figures/extended_comparison.png.
+Writes reports/extended_results.csv, reports/extended_by_season.csv,
+reports/extended_predictions.csv (every prediction of the "+ players" models)
+and reports/figures/extended_comparison.png.
 
 Run:  uv run python scripts/05_extended_experiment.py      (a few minutes)
 """
@@ -83,6 +84,9 @@ if __name__ == "__main__":
         diff, lo, hi = bootstrap_rps_difference(a, b)
         results.loc[i, ["rps_change", "rps_change_low", "rps_change_high"]] = [diff, lo, hi]
     results.to_csv(config.REPORTS_DIR / "extended_results.csv", index=False)
+    # Every prediction of the model the app uses (base + players), for the Evaluation page.
+    keep_sets = preds["feature_set"].isin(["+ players", "Bookmaker"])
+    preds[keep_sets].to_csv(config.REPORTS_DIR / "extended_predictions.csv", index=False)
 
     by_season = preds.groupby(["model", "feature_set", "season_label"]).apply(
         lambda g: evaluation.score(g[[f"prob_{o}" for o in config.OUTCOMES]].to_numpy(), g["result"])["accuracy"],

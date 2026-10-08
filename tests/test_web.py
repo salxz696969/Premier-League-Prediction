@@ -84,3 +84,40 @@ def test_post_is_rejected(base_url):
         urllib.request.urlopen(request, timeout=10)
     assert err.value.code == 405
     assert err.value.headers["Allow"] == "GET, HEAD"
+
+
+def test_explanation_reproduces_the_prediction(project):
+    """The step-by-step explanation must give exactly the model's own numbers."""
+    import math
+
+    home, away = project.default_fixture()
+    p = project.predict(home, away)
+    e = p["explain"]
+    for side in ("home", "away"):
+        d = e["sides"][side]
+        total = sum(i["contribution"] for i in d["items"]) + d["other_contribution"] + d["indicator_contribution"]
+        assert math.exp(d["intercept"] + total) == pytest.approx(d["expected_goals"])
+        assert d["expected_goals"] == pytest.approx(p["expected_goals"][side])
+    for o in ("H", "D", "A"):
+        assert e["outcome"][o] == pytest.approx(p["probabilities"][o])
+
+
+def test_evaluation_report_metrics(project):
+    report = project.evaluation()
+    for entry in report["entries"]:
+        assert 0 < entry["accuracy"] < 1
+        assert sum(c["support"] for c in entry["per_class"]) == entry["matches"]
+        assert sum(map(sum, entry["confusion"])) == entry["matches"]
+        correct = sum(entry["confusion"][i][i] for i in range(3))
+        assert correct / entry["matches"] == pytest.approx(entry["accuracy"])
+
+
+def test_data_explorer_filters_and_csv(base_url):
+    catalogue = json.loads(get(base_url + "/api/datasets")[1])
+    assert len(catalogue["datasets"]) == 8
+    page = json.loads(get(base_url + "/api/data?dataset=matches&season=2015-16&team=Leicester%20City")[1])
+    assert page["matching"] == 38
+    status, body = get(base_url + "/api/data.csv?dataset=matches&season=2015-16&team=Leicester%20City")
+    assert status == 200 and len(body.decode().strip().splitlines()) == 39
+    with pytest.raises(urllib.error.HTTPError):
+        get(base_url + "/api/data?dataset=nope")

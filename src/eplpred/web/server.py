@@ -11,8 +11,12 @@ URLs
 /api/teams                current Elo ranking
 /api/elo?team=A&team=B    Elo history of one or more teams
 /api/models               evaluation results
+/api/evaluation           every evaluation metric (precision, recall, F1, AUC, ...)
 /api/seasons              list of seasons
 /api/season?label=2019-20 league table (+ predictions for test seasons)
+/api/datasets             every dataset the project uses (source, licence, file)
+/api/data?dataset=...     one page of rows (filters: q, season, team; sort, dir, page, size)
+/api/data.csv?dataset=... the same rows as a CSV download
 """
 
 from __future__ import annotations
@@ -47,8 +51,11 @@ def make_application(project: ProjectData):
         "/api/teams": lambda q: project.teams(),
         "/api/elo": lambda q: project.elo_history(q.get("team", [])),
         "/api/models": lambda q: project.models(),
+        "/api/evaluation": lambda q: project.evaluation(),
         "/api/seasons": lambda q: project.seasons(),
         "/api/season": lambda q: project.season(q["label"][0]),
+        "/api/datasets": lambda q: project.explorer.catalogue(),
+        "/api/data": lambda q: project.explorer.page(q["dataset"][0], q),
     }
 
     def application(environ, start_response):
@@ -59,7 +66,15 @@ def make_application(project: ProjectData):
             extra_headers.append(("Allow", "GET, HEAD"))
         else:
             path_name = environ.get("PATH_INFO", "/")
-            if path_name in routes:
+            if path_name == "/api/data.csv":
+                query = parse_qs(environ.get("QUERY_STRING", ""))
+                try:
+                    key = query["dataset"][0]
+                    status, body, content_type = HTTPStatus.OK, project.explorer.csv(key, query), "text/csv"
+                    extra_headers.append(("Content-Disposition", f'attachment; filename="{key}.csv"'))
+                except (KeyError, ValueError) as error:
+                    status, body, content_type = HTTPStatus.BAD_REQUEST, str(error).encode(), "text/plain"
+            elif path_name in routes:
                 try:
                     result = routes[path_name](parse_qs(environ.get("QUERY_STRING", "")))
                     status, body = HTTPStatus.OK, json.dumps(result, default=_json_default).encode()

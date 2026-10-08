@@ -14,7 +14,8 @@ import pandas as pd
 from .. import config, data, features
 from ..elo import compute_elo
 from ..evaluation import BOOKMAKER
-from ..predict import Predictor
+from ..predict import Predictor, explain_prediction
+from .data_explorer import DataExplorer
 
 BASELINE = "Baseline: home-win rate"
 
@@ -34,6 +35,10 @@ class ProjectData:
         self.original = pd.read_csv(config.REPORTS_DIR / "comparison_with_original.csv")
         extended = config.REPORTS_DIR / "extended_results.csv"
         self.extended = pd.read_csv(extended) if extended.exists() else None
+        ext_preds = config.REPORTS_DIR / "extended_predictions.csv"
+        self.extended_predictions = pd.read_csv(ext_preds, parse_dates=["date"]) if ext_preds.exists() else None
+        self._evaluation = None
+        self.explorer = DataExplorer()
         candidates = self.overall[~self.overall["model"].isin([BOOKMAKER, BASELINE])]
         self.best_model = candidates.sort_values("rps").iloc[0]["model"]
         self._predict = lru_cache(maxsize=512)(self._predict_uncached)
@@ -105,6 +110,7 @@ class ProjectData:
             "away_lineup": lineup(away),
             "h2h_home_ppg": f.get("h2h_home_ppg"),
             "h2h_meetings": int(f.get("h2h_meetings", 0)),
+            "explain": explain_prediction(self.predictor, home, away),
             "model": self.predictor.model.name,
             "as_of": self.matches["date"].max().date().isoformat(),
         }
@@ -117,6 +123,11 @@ class ProjectData:
 
     def predict(self, home: str, away: str) -> dict:
         return self._predict(home, away)
+
+    def evaluation(self) -> dict:
+        if self._evaluation is None:
+            self._evaluation = evaluation_report(self.predictions, self.extended_predictions, self.best_model)
+        return self._evaluation
 
     # ------------------------------------------------------------------
     # Teams
@@ -260,3 +271,85 @@ def league_table(games: pd.DataFrame) -> list[dict]:
 
 def _records(df: pd.DataFrame) -> list[dict]:
     return df.replace({np.nan: None}).to_dict(orient="records")
+
+
+# ----------------------------------------------------------------------
+# Evaluation page: every standard metric, computed from saved predictions
+# ----------------------------------------------------------------------
+def evaluation_report(predictions: pd.DataFrame, extended: pd.DataFrame | None, best_model: str) -> dict:
+    from sklearn.metrics import precision_recall_fscore_support, roc_auc_score
+
+    from .. import evaluation as ev
+
+    outcomes = config.OUTCOMES
+    entries = []
+
+    def add(key, label, period, rows):
+        if rows.empty:
+            return
+        proba = rows[[f"prob_{o}" for o in outcomes]].to_numpy()
+        result = rows["result"].reset_index(drop=True)
+        predicted = np.array(outcomes)[proba.argmax(axis=1)]
+        s = ev.score(proba, result)
+        n = len(rows)
+        acc = s["accuracy"]
+        half = 1.96 * np.sqrt(acc * (1 - acc) / n)
+        prec, rec, f1, sup = precision_recall_fscore_support(result, predicted, labels=outcomes, zero_division=0)
+        observed = ev.one_hot(result)
+        auc = [float(roc_auc_score(observed[:, i], proba[:, i])) for i in range(3)]
+        cm = pd.crosstab(result, predicted).reindex(index=outcomes, columns=outcomes, fill_value=0)
+        calib = {}
+        for i, o in enumerate(outcomes):
+            groups = pd.cut(proba[:, i], np.linspace(0, 1, 11))
+            t = pd.DataFrame({"p": proba[:, i], "y": observed[:, i]}).groupby(groups, observed=True).agg(
+                p=("p", "mean"), y=("y", "mean"), n=("y", "size"))
+            t = t[t["n"] >= 20]
+            calib[o] = [{"predicted": float(a), "actual": float(b), "n": int(c)} for a, b, c in t.to_numpy()]
+        entries.append({
+            "key": key, "label": label, "period": period, "matches": n,
+            "accuracy": acc, "accuracy_low": acc - half, "accuracy_high": acc + half,
+            "log_loss": s["log_loss"], "brier": s["brier"], "rps": s["rps"],
+            "per_class": [{"outcome": o, "precision": float(p_), "recall": float(r_), "f1": float(f_), "support": int(n_)}
+                          for o, p_, r_, f_, n_ in zip(outcomes, prec, rec, f1, sup)],
+            "macro_f1": float(np.mean(f1)),
+            "weighted_f1": float(np.average(f1, weights=sup)),
+            "auc": auc, "macro_auc": float(np.mean(auc)),
+            "confusion": cm.to_numpy().tolist(),
+            "calibration": calib,
+            "actual_share": {o: float(result.eq(o).mean()) for o in outcomes},
+            "predicted_share": {o: float((predicted == o).mean()) for o in outcomes},
+        })
+
+    full = "2014-15 to 2025-26 (12 seasons)"
+    for model in [best_model] + [m for m in predictions["model"].unique() if m != best_model]:
+        add(f"full:{model}", model, full, predictions[predictions["model"] == model])
+
+    samples = []
+    if extended is not None:
+        recent = "2018-19 to 2025-26 (8 seasons)"
+        app_rows = extended[(extended["model"] == "Poisson goals model") & (extended["feature_set"] == "+ players")]
+        add("recent:app", "Poisson goals model + players (used by the app)", recent, app_rows)
+        seasons = set(app_rows["season_label"])
+        same = predictions[predictions["season_label"].isin(seasons)]
+        add("recent:base", f"{best_model} (base features only)", recent, same[same["model"] == best_model])
+        add("recent:book", ev.BOOKMAKER, recent, same[same["model"] == ev.BOOKMAKER])
+        add("recent:baseline", "Baseline: home-win rate", recent, same[same["model"] == "Baseline: home-win rate"])
+        pick = app_rows.sample(n=min(60, len(app_rows)), random_state=config.RANDOM_STATE).sort_values("date")
+        for r in pick.itertuples():
+            samples.append({
+                "date": pd.Timestamp(r.date).date().isoformat(), "season": r.season_label,
+                "home": r.home_team, "away": r.away_team,
+                "score": f"{int(r.home_goals)}-{int(r.away_goals)}", "result": r.result,
+                "prob": {"H": r.prob_H, "D": r.prob_D, "A": r.prob_A},
+            })
+
+    folds = []
+    for s in sorted(predictions["season"].unique()):
+        folds.append({"test": evaluation_label(s), "train_from": evaluation_label(config.FIRST_TRAIN_SEASON),
+                      "train_to": evaluation_label(s - 1), "train_matches": int((s - config.FIRST_TRAIN_SEASON) * 380),
+                      "test_matches": 380})
+    return {"entries": entries, "samples": samples, "folds": folds, "outcomes": outcomes}
+
+
+def evaluation_label(year: int) -> str:
+    return f"{year}-{(year + 1) % 100:02d}"

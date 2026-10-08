@@ -125,3 +125,98 @@ class Predictor:
         return Prediction(
             home_team, away_team, *map(float, proba), float(lam_h), float(lam_a), top_scores[0][0], top_scores, inputs
         )
+
+
+# Readable names for the inputs that aren't in features.FEATURE_DESCRIPTIONS.
+EXTRA_LABELS = {
+    "home_xi_influence": "Home starting XI strength (FPL influence)",
+    "away_xi_influence": "Away starting XI strength (FPL influence)",
+    "home_xi_ict": "Home starting XI ICT index",
+    "away_xi_ict": "Away starting XI ICT index",
+    "home_xi_value": "Home starting XI price (£m)",
+    "away_xi_value": "Away starting XI price (£m)",
+    "home_key_missing": "Home top-5 players not starting",
+    "away_key_missing": "Away top-5 players not starting",
+    "xi_influence_diff": "Starting XI strength difference",
+    "xi_value_diff": "Starting XI price difference",
+}
+
+
+def explain_prediction(predictor: Predictor, home_team: str, away_team: str, top: int = 8) -> dict:
+    """Show, with the model's real numbers, how a prediction is calculated.
+
+    The Poisson model predicts expected goals as
+        expected goals = exp(intercept + sum of  weight_i x z_i)
+    where z_i = (value_i - average_i) / spread_i is how unusual input i is
+    compared with the training matches. exp(intercept) is the expected goals
+    of a perfectly average match; each input multiplies it by exp(weight x z).
+    The goal distributions are then combined into a grid of exact scores.
+    """
+    from scipy.stats import poisson
+
+    from .features import FEATURE_DESCRIPTIONS
+
+    model = predictor.poisson
+    row = predictor._fixture_features(home_team, away_team)
+    X = row[model.columns_]
+    labels = {**FEATURE_DESCRIPTIONS, **EXTRA_LABELS}
+
+    sides = {}
+    for side, pipe in (("home", model.home_), ("away", model.away_)):
+        imputer, scaler, reg = pipe[0], pipe[1], pipe[2]
+        values = imputer.transform(X)[0]
+        names = imputer.get_feature_names_out(model.columns_)
+        z = (values - scaler.mean_) / scaler.scale_
+        contrib = z * reg.coef_
+        log_lambda = float(reg.intercept_ + contrib.sum())
+        lam = float(np.exp(log_lambda))
+        assert abs(lam - pipe.predict(X)[0]) < 1e-9, "explanation does not match the model"
+
+        items, indicator_sum = [], 0.0
+        for name, v, mean, sd, zi, w, c in zip(names, values, scaler.mean_, scaler.scale_, z, reg.coef_, contrib):
+            if name.startswith("missingindicator_"):
+                indicator_sum += c  # grouped: "player data available"
+                continue
+            items.append({
+                "feature": name, "label": labels.get(name, name.replace("_", " ")),
+                "value": float(v), "average": float(mean), "spread": float(sd),
+                "z": float(zi), "weight": float(w), "contribution": float(c), "factor": float(np.exp(c)),
+            })
+        items.sort(key=lambda d: -abs(d["contribution"]))
+        shown, rest = items[:top], items[top:]
+        sides[side] = {
+            "intercept": float(reg.intercept_),
+            "baseline": float(np.exp(reg.intercept_)),
+            "items": shown,
+            "other_count": len(rest),
+            "other_contribution": float(sum(d["contribution"] for d in rest)),
+            "indicator_contribution": float(indicator_sum),
+            "log_lambda": log_lambda,
+            "expected_goals": lam,
+            "n_inputs": int(len(names)),
+        }
+
+    goals = np.arange(model.max_goals + 1)
+    p_home = poisson.pmf(goals, sides["home"]["expected_goals"])
+    p_away = poisson.pmf(goals, sides["away"]["expected_goals"])
+    grid = np.outer(p_home, p_away)
+    total = grid.sum()
+    outcome = {
+        "H": float(np.tril(grid, -1).sum() / total),
+        "D": float(np.trace(grid) / total),
+        "A": float(np.triu(grid, 1).sum() / total),
+    }
+    elo_h, elo_a = float(row["home_elo"].iloc[0]), float(row["away_elo"].iloc[0])
+    from .elo import EloParams, expected_home_score
+
+    hfa = EloParams().home_advantage
+    return {
+        "sides": sides,
+        "goal_probs": {"home": p_home[:7].tolist(), "away": p_away[:7].tolist()},
+        "grid": grid[:6, :6].tolist(),
+        "grid_total_shown": float(grid[:6, :6].sum()),
+        "grid_total": float(total),
+        "outcome": outcome,
+        "elo": {"home": elo_h, "away": elo_a, "home_advantage": hfa,
+                "expected_home_score": expected_home_score(elo_h, elo_a, hfa)},
+    }

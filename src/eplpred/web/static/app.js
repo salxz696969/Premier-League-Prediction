@@ -203,7 +203,7 @@ function lineChart(container, series, { height = 300, yFormat = (v) => v, xTicks
 }
 
 /* ------------------------------------------------------------- router */
-const views = ["predict", "teams", "models", "seasons", "about"];
+const views = ["predict", "teams", "models", "evaluation", "seasons", "data", "about"];
 const loaded = new Set();
 let current = null;
 
@@ -226,7 +226,7 @@ function route() {
   window.scrollTo({ top: 0 });
   if (!loaded.has(name)) {
     loaded.add(name);
-    ({ predict: initPredict, teams: initTeams, models: initModels, seasons: initSeasons, about: async () => {} })[name]().catch((err) => toast(err.message));
+    ({ predict: initPredict, teams: initTeams, models: initModels, evaluation: initEvaluation, seasons: initSeasons, data: initData, about: async () => {} })[name]().catch((err) => toast(err.message));
   } else {
     redraw[name]?.();
   }
@@ -265,6 +265,12 @@ async function initPredict() {
     shown = [h.value, a.value];
     $("#swap").classList.toggle("turned");
     runPredict();
+  });
+  $("#xg-switch").addEventListener("click", (ev) => {
+    const b = ev.target.closest("button");
+    if (!b) return;
+    xgSide = b.dataset.side;
+    drawXg();
   });
   await runPredict();
 }
@@ -329,6 +335,8 @@ function renderPrediction(p) {
   }
   $("#compare").innerHTML = html.join("");
   renderLineups(p);
+  renderExplain(p);
+  redraw.predict = () => explainData && renderExplain(explainData.p);
   const h2h = p.h2h_meetings
     ? `Head-to-head: ${p.home} took ${num(p.h2h_home_ppg, 1)} points per game from the last ${p.h2h_meetings} meetings. `
     : "These teams haven't met recently. ";
@@ -495,35 +503,6 @@ function drawModels() {
     format: (v) => v.toFixed(4), labelWidth: 250, rowHeight: 28, ariaLabel: "Feature importance",
   });
 
-  // Confusion matrix
-  const names = { H: "Home win", D: "Draw", A: "Away win" };
-  const cm = d.confusion.matrix;
-  let html = `<div class="confusion"><span></span>${d.confusion.labels.map((l) => `<span class="hdr">${names[l]}</span>`).join("")}`;
-  cm.forEach((row, i) => {
-    const total = row.reduce((a, b) => a + b, 0);
-    html += `<span class="rowhdr">${names[d.confusion.labels[i]]}</span>`;
-    row.forEach((v) => {
-      const share = total ? v / total : 0;
-      const ink = share > 0.5 ? "#fff" : "var(--text)";
-      html += `<span class="cell" style="background:color-mix(in srgb, var(--home) ${Math.round(share * 100)}%, var(--fill));color:${ink}">${pct(share)}<small>${v.toLocaleString("en")}</small></span>`;
-    });
-  });
-  html += `<span></span><span class="axis">Predicted →  ·  rows: what actually happened</span></div>`;
-  $("#confusion").innerHTML = html;
-
-  // Calibration
-  const cal = Object.entries(d.calibration_home_win).map(([model, pts]) => ({
-    name: shortName(model), color: colorForModel(model),
-    points: pts.map((p) => ({ x: p.predicted, y: p.actual, n: p.n })),
-  }));
-  $("#calib-legend").innerHTML = cal.map((s) => `<span><i style="background:${s.color}"></i>${esc(s.name)}</span>`).concat('<span><i class="dashed"></i>Perfect</span>').join("");
-  lineChart($("#calibration"), cal, {
-    height: 260, markers: true, diagonal: true, xDomain: [0, 1], yDomain: [0, 1],
-    xTicks: [0, 0.2, 0.4, 0.6, 0.8, 1], xTickFormat: (v) => pct(v), yFormat: (v) => pct(v),
-    gapAfter: 0.5, tipTitle: (p) => `Predicted ≈ ${pct(p.x)}`,
-    ariaLabel: "Calibration of home-win probabilities",
-  });
-
   // Extra data experiment (Poisson model, same test seasons)
   if (d.extended) {
     $("#extended-card").hidden = false;
@@ -613,6 +592,409 @@ function drawMatches() {
   $("#show-more").hidden = rows.length <= matchLimit;
 }
 
+/* ------------------------------------------------- how it's calculated */
+let explainData, xgSide = "home";
+const smart = (v) => (v == null ? "–" : Math.abs(v) >= 100 ? v.toFixed(0) : Math.abs(v) >= 10 ? v.toFixed(1) : v.toFixed(2));
+
+function renderExplain(p) {
+  const e = p.explain;
+  if (!e) return;
+  explainData = { e, p };
+  $("#explain-card").hidden = false;
+  const sw = $$("#xg-switch button");
+  sw[0].textContent = `${p.home} goals`;
+  sw[1].textContent = `${p.away} goals`;
+  drawXg();
+
+  // Step 2: goal distributions
+  const lh = e.sides.home.expected_goals, la = e.sides.away.expected_goals;
+  $("#dist-home-label").textContent = `${p.home}: λ = ${num(lh, 2)} expected goals`;
+  $("#dist-away-label").textContent = `${p.away}: λ = ${num(la, 2)} expected goals`;
+  goalBars($("#dist-home"), e.goal_probs.home, css("--home"), p.home);
+  goalBars($("#dist-away"), e.goal_probs.away, css("--away"), p.away);
+  $("#poisson-example").innerHTML =
+    `Example: chance ${esc(p.home)} scores exactly 2 = ${num(lh, 2)}<sup>2</sup> × e<sup>−${num(lh, 2)}</sup> ÷ 2! = ` +
+    `${num(lh * lh, 3)} × ${num(Math.exp(-lh), 3)} ÷ 2 = <strong>${pct(e.goal_probs.home[2], 1)}</strong>`;
+
+  // Step 3: score grid
+  const g = e.grid, max = Math.max(...g.flat());
+  const region = (h, a) => (h > a ? "--home" : h === a ? "--draw" : "--away");
+  let html = `<div class="sg-axis-side">${esc(p.home)} goals</div><div class="sg-main"><div class="sg-axis-top">${esc(p.away)} goals</div><table class="score-table"><thead><tr><th></th>`;
+  for (let a = 0; a < g[0].length; a++) html += `<th scope="col">${a}</th>`;
+  html += "</tr></thead><tbody>";
+  g.forEach((row, h) => {
+    html += `<tr><th scope="row">${h}</th>`;
+    row.forEach((v, a) => {
+      const strength = Math.round(12 + (v / max) * 60);
+      html += `<td style="background:color-mix(in srgb, var(${region(h, a)}) ${strength}%, var(--surface))" title="${h}-${a}: ${pct(v, 2)}"><span>${h}-${a}</span>${pct(v, 1)}</td>`;
+    });
+    html += "</tr>";
+  });
+  html += "</tbody></table></div>";
+  $("#score-grid").innerHTML = html;
+  const [ph, pd, pa] = pct3([e.outcome.H, e.outcome.D, e.outcome.A]);
+  $("#grid-example").innerHTML = `1-0 = ${pct(e.goal_probs.home[1], 1)} × ${pct(e.goal_probs.away[0], 1)} = <strong>${pct(g[1][0], 1)}</strong>`;
+  $("#grid-sums").innerHTML = [
+    ["--home", `Add up the blue cells (${esc(p.home)} more goals)`, ph, `${p.home} win`],
+    ["--draw", "Add up the grey diagonal (same goals)", pd, "Draw"],
+    ["--away", `Add up the red cells (${esc(p.away)} more goals)`, pa, `${p.away} win`],
+  ].map(([c, how, v, what]) => `<div class="sum"><i style="background:var(${c})"></i><span class="how">${how}</span><span class="eq">= <strong>${v}</strong> ${esc(what)}</span></div>`).join("");
+  $("#grid-note").textContent = `The grid shows scores up to 5-5 (${pct(e.grid_total_shown, 1)} of all chances). The sums also include rarer scores up to 10 goals each. These are exactly the percentages at the top of the page.`;
+
+  // Elo
+  const el_ = e.elo, diff = el_.home + el_.home_advantage - el_.away;
+  $("#elo-formula").innerHTML =
+    `Elo expected score for ${esc(p.home)} = 1 ÷ (1 + 10<sup>−(${num(el_.home, 0)} + ${num(el_.home_advantage, 0)} home advantage − ${num(el_.away, 0)}) ÷ 400</sup>) ` +
+    `= 1 ÷ (1 + 10<sup>${num(-diff / 400, 3)}</sup>) = <strong>${num(el_.expected_home_score, 3)}</strong>`;
+}
+
+function drawXg() {
+  if (!explainData) return;
+  const { e, p } = explainData;
+  const d = e.sides[xgSide];
+  const team = xgSide === "home" ? p.home : p.away;
+  $$("#xg-switch button").forEach((b) => b.setAttribute("aria-pressed", b.dataset.side === xgSide));
+  moveThumb($("#xg-switch"));
+  $("#xg-intro").innerHTML = `In an average Premier League match, the ${xgSide} team scores <strong>${num(d.baseline, 2)}</strong> goals. That's the model's starting point. Each input then multiplies it up or down for ${esc(team)}:`;
+
+  const rows = d.items.map((it) => ({
+    label: it.label,
+    detail: `${smart(it.value)} <span class="vs">vs average ${smart(it.average)}</span>`,
+    factor: it.factor,
+  }));
+  rows.push({ label: `${d.other_count} smaller inputs together`, detail: "", factor: Math.exp(d.other_contribution) });
+  if (Math.abs(d.indicator_contribution) > 1e-9) rows.push({ label: "Player-data flags (seasons without player data)", detail: "", factor: Math.exp(d.indicator_contribution) });
+  const maxLog = Math.max(...rows.map((r) => Math.abs(Math.log(r.factor))), 1e-6);
+  const color = xgSide === "home" ? "--home" : "--away";
+  $("#xg-factors").innerHTML =
+    `<div class="factor start"><span class="f-label">Starting point (average ${xgSide} team)</span><span class="f-detail"></span><span class="f-bar"></span><span class="f-val">${num(d.baseline, 2)}</span></div>` +
+    rows.map((r) => {
+      const w = (Math.abs(Math.log(r.factor)) / maxLog) * 50;
+      const up = r.factor >= 1;
+      return `<div class="factor"><span class="f-label">${esc(r.label)}</span><span class="f-detail">${r.detail}</span>
+        <span class="f-bar"><span class="f-mid"></span><span class="f-fill ${up ? "up" : "down"}" style="width:${w}%;${up ? "left:50%" : `right:50%`}"></span></span>
+        <span class="f-val ${up ? "up" : "down"}">${up ? "▲" : "▼"} ×${r.factor.toFixed(3)}</span></div>`;
+    }).join("") +
+    `<div class="factor total"><span class="f-label">Expected goals for ${esc(team)}</span><span class="f-detail"></span><span class="f-bar"></span><span class="f-val" style="color:var(${color})">${num(d.expected_goals, 2)}</span></div>`;
+  const factors = [d.baseline, ...rows.map((r) => r.factor)];
+  $("#xg-formula").innerHTML = `${factors.map((f, i) => (i === 0 ? num(f, 2) : f.toFixed(3))).join(" × ")} = <strong>${num(d.expected_goals, 2)}</strong>`;
+  $("#xg-table").innerHTML =
+    `<thead><tr><th>Input</th><th>Value</th><th>Average</th><th>Spread</th><th>z</th><th>Weight</th><th>Effect</th></tr></thead><tbody>` +
+    d.items.map((it) => `<tr><td>${esc(it.label)}</td><td>${smart(it.value)}</td><td>${smart(it.average)}</td><td>${smart(it.spread)}</td><td>${it.z.toFixed(2)}</td><td>${it.weight.toFixed(4)}</td><td>×${it.factor.toFixed(3)}</td></tr>`).join("") +
+    `</tbody>`;
+}
+
+function goalBars(container, probs, color, team) {
+  const { svg, width, height } = svgFor(container, 150);
+  svg.setAttribute("aria-label", `Chance of ${team} scoring 0 to 6 goals`);
+  const n = probs.length, gap = 8, bw = (width - gap * (n - 1)) / n, top = 18, bottom = 22;
+  const max = Math.max(...probs);
+  probs.forEach((p, k) => {
+    const h = ((height - top - bottom) * p) / max, x = k * (bw + gap), y = height - bottom - h;
+    el("path", { d: `M${x},${height - bottom}v${-(h - 4)}a4,4 0 0 1 4,-4h${bw - 8}a4,4 0 0 1 4,4v${h - 4}z`, fill: color }, svg);
+    const t = el("text", { x: x + bw / 2, y: y - 5, "text-anchor": "middle", class: "value-label" }, svg);
+    t.textContent = pct(p, 0);
+    const l = el("text", { x: x + bw / 2, y: height - 6, "text-anchor": "middle" }, svg);
+    l.textContent = k === n - 1 ? `${k}` : k;
+    const hit = el("rect", { x, y: 0, width: bw, height, class: "hit" }, svg);
+    hit.addEventListener("pointermove", (ev) => tip.show(`<strong>${esc(team)} scores ${k}</strong><br>${pct(p, 1)}`, ev.clientX, ev.clientY));
+    hit.addEventListener("pointerleave", () => tip.hide());
+  });
+}
+
+/* ---------------------------------------------------------- evaluation */
+let evalData, evalEntry, calibOutcome = "H", sampleIndex = 0;
+const OUT_NAME = { H: "Home win", D: "Draw", A: "Away win" };
+
+async function initEvaluation() {
+  evalData = await api("/api/evaluation");
+  const pick = $("#eval-model");
+  pick.innerHTML = evalData.entries.map((e) => `<option value="${esc(e.key)}">${esc(shortName(e.label))} · ${esc(e.period.split(" (")[0])}</option>`).join("");
+  pick.value = evalData.entries.some((e) => e.key === "recent:app") ? "recent:app" : evalData.entries[0].key;
+  pick.addEventListener("change", drawEvaluation);
+  $("#calib-switch").addEventListener("click", (ev) => {
+    const b = ev.target.closest("button");
+    if (!b) return;
+    calibOutcome = b.dataset.outcome;
+    drawCalibration();
+  });
+  $("#another-match").addEventListener("click", () => {
+    sampleIndex = (sampleIndex + 1) % evalData.samples.length;
+    drawWorked();
+  });
+  sampleIndex = Math.max(0, evalData.samples.length - 1);
+  drawEvaluation();
+  redraw.evaluation = drawEvaluation;
+}
+
+const samePeriod = (entry, keyPart) => evalData.entries.find((e) => e.period === entry.period && e.key.includes(keyPart));
+
+function drawEvaluation() {
+  evalEntry = evalData.entries.find((e) => e.key === $("#eval-model").value);
+  const e = evalEntry;
+  $("#eval-period").textContent = `Tested on ${e.matches.toLocaleString("en")} matches, ${e.period}`;
+  const macroP = e.per_class.reduce((a, c) => a + c.precision, 0) / 3;
+  const macroR = e.per_class.reduce((a, c) => a + c.recall, 0) / 3;
+  $("#eval-tiles").innerHTML = [
+    [pct(e.accuracy, 1), `Accuracy (95% range ${pct(e.accuracy_low, 1)} to ${pct(e.accuracy_high, 1)})`],
+    [e.macro_f1.toFixed(3), "F1 score (macro average)"],
+    [e.macro_auc.toFixed(3), "AUC (0.5 = guessing, 1 = perfect)"],
+    [e.rps.toFixed(4), "RPS (lower is better)"],
+  ].map(([v, l]) => `<div class="tile"><span class="tile-value">${v}</span><span class="tile-label">${esc(l)}</span></div>`).join("");
+
+  // Classification report (same layout as scikit-learn's classification_report)
+  const total = e.per_class.reduce((a, c) => a + c.support, 0);
+  const row = (name, p, r, f, n, cls = "") => `<tr class="${cls}"><td>${name}</td><td>${p == null ? "" : p.toFixed(3)}</td><td>${r == null ? "" : r.toFixed(3)}</td><td>${f.toFixed(3)}</td><td>${n.toLocaleString("en")}</td></tr>`;
+  const wP = e.per_class.reduce((a, c) => a + c.precision * c.support, 0) / total;
+  const wR = e.per_class.reduce((a, c) => a + c.recall * c.support, 0) / total;
+  $("#class-report").innerHTML =
+    `<thead><tr><th>Outcome</th><th>Precision</th><th>Recall</th><th>F1 score</th><th>Support</th></tr></thead><tbody>` +
+    e.per_class.map((c) => row(OUT_NAME[c.outcome], c.precision, c.recall, c.f1, c.support)).join("") +
+    row("Accuracy", null, null, e.accuracy, total, "sep") +
+    row("Macro average", macroP, macroR, e.macro_f1, total) +
+    row("Weighted average", wP, wR, e.weighted_f1, total) + `</tbody>`;
+
+  // Confusion matrix
+  const cm = e.confusion, labels = evalData.outcomes;
+  let html = `<div class="confusion"><span></span>${labels.map((l) => `<span class="hdr">Picked: ${OUT_NAME[l]}</span>`).join("")}`;
+  cm.forEach((r, i) => {
+    const rowTotal = r.reduce((a, b) => a + b, 0);
+    html += `<span class="rowhdr">Real: ${OUT_NAME[labels[i]]}</span>`;
+    r.forEach((v, j) => {
+      const share = rowTotal ? v / rowTotal : 0;
+      const color = i === j ? "--good" : "--draw";
+      html += `<span class="cell" style="background:color-mix(in srgb, var(${color}) ${Math.round(12 + share * 70)}%, var(--surface));color:${share > 0.55 ? "#fff" : "var(--text)"}">${v.toLocaleString("en")}<small>${pct(share)} of row</small></span>`;
+    });
+  });
+  html += `<span></span><span class="axis">Green = correct (the diagonal). Correct total: ${cm.reduce((a, r, i) => a + r[i], 0).toLocaleString("en")} of ${total.toLocaleString("en")} = ${pct(e.accuracy, 1)}</span></div>`;
+  $("#eval-confusion").innerHTML = html;
+  const draw = e.per_class.find((c) => c.outcome === "D");
+  $("#draw-note").textContent = `${pct(e.actual_share.D)} of matches were draws, but the model picked a draw for ${pct(e.predicted_share.D, 1)} of matches, because a draw is almost never the single most likely result. That's why draw recall is ${draw.recall.toFixed(3)}. The draw chance is still in its probabilities (see calibration).`;
+
+  drawCalibration();
+  drawMetricList();
+  drawWorked();
+  drawWalkForward();
+}
+
+function drawCalibration() {
+  const e = evalEntry;
+  $$("#calib-switch button").forEach((b) => b.setAttribute("aria-pressed", b.dataset.outcome === calibOutcome));
+  moveThumb($("#calib-switch"));
+  const book = samePeriod(e, "Bookmaker") || samePeriod(e, "book");
+  const series = [{ name: shortName(e.label), color: css("--home"), pts: e.calibration[calibOutcome] }];
+  if (book && book !== e) series.push({ name: "Bookmaker (Bet365)", color: css("--away"), pts: book.calibration[calibOutcome] });
+  $("#calib-legend").innerHTML = series.map((s) => `<span><i style="background:${s.color}"></i>${esc(s.name)}</span>`).concat('<span><i class="dashed"></i>Perfect</span>').join("");
+  lineChart($("#calibration"), series.map((s) => ({ name: s.name, color: s.color, points: s.pts.map((q) => ({ x: q.predicted, y: q.actual })) })), {
+    height: 260, markers: true, diagonal: true, xDomain: [0, 1], yDomain: [0, 1],
+    xTicks: [0, 0.2, 0.4, 0.6, 0.8, 1], xTickFormat: (v) => pct(v), yFormat: (v) => pct(v), gapAfter: 0.5,
+    tipTitle: (q) => `${OUT_NAME[calibOutcome]}: predicted ≈ ${pct(q.x)}`, ariaLabel: "Calibration chart",
+  });
+}
+
+function drawMetricList() {
+  const e = evalEntry;
+  const base = samePeriod(e, "Baseline") || samePeriod(e, "baseline");
+  const book = samePeriod(e, "Bookmaker") || samePeriod(e, "book");
+  const s = e.actual_share;
+  const uniformRps = s.H * ((1 / 3 - 1) ** 2 + (2 / 3 - 1) ** 2) / 2 + s.D * ((1 / 3) ** 2 + (2 / 3 - 1) ** 2) / 2 + s.A * ((1 / 3) ** 2 + (2 / 3) ** 2) / 2;
+  const metrics = [
+    { name: "Log loss", key: "log_loss", d: 3, lower: true, guess: Math.log(3),
+      formula: "average of  −ln(probability given to what actually happened)",
+      what: "Rewards giving a high probability to what happened, and punishes confident mistakes very hard (saying 5 % for something that happens costs −ln 0.05 = 3.0)." },
+    { name: "Brier score", key: "brier", d: 3, lower: true, guess: 2 / 3,
+      formula: "average of  (p_home − y_home)² + (p_draw − y_draw)² + (p_away − y_away)²     (y = 1 for what happened, 0 otherwise)",
+      what: "The squared distance between the predicted probabilities and the real result. 0 = perfect." },
+    { name: "Ranked Probability Score (RPS)", key: "rps", d: 4, lower: true, guess: uniformRps,
+      formula: "average of  ½ × [ (P_home − Y_home)² + (P_home + P_draw − Y_home − Y_draw)² ]",
+      what: "Like Brier, but it knows home win → draw → away win is an ordered scale, so predicting a draw when the home team wins is less wrong than predicting an away win. The standard score in football research (Constantinou & Fenton, 2012)." },
+    { name: "AUC (area under the ROC curve)", key: "macro_auc", d: 3, lower: false, guess: 0.5,
+      formula: "chance that a random match WITH the outcome got a higher probability for it than a random match WITHOUT it",
+      what: `0.5 = no better than guessing, 1 = perfect. Per outcome: home win ${e.auc[0].toFixed(3)}, draw ${e.auc[1].toFixed(3)}, away win ${e.auc[2].toFixed(3)}. Draws are the hardest to tell apart.` },
+  ];
+  $("#metric-list").innerHTML = metrics.map((m) => {
+    const cmp = [[shortName(e.label), e[m.key], true], book && book !== e ? ["Bookmaker", book[m.key]] : null, base && base !== e ? ["Always home win", base[m.key]] : null, ["Random guess (⅓ each)", m.guess]].filter(Boolean);
+    return `<div class="metric">
+      <div class="metric-head"><h3>${m.name}</h3><span class="dir">${m.lower ? "lower is better" : "higher is better"}</span></div>
+      <p class="metric-what">${esc(m.what)}</p>
+      <p class="formula small">${esc(m.formula)}</p>
+      <div class="metric-cmp">${cmp.map(([n, v, me]) => `<span class="${me ? "me" : ""}"><b>${v.toFixed(m.d)}</b>${esc(n)}</span>`).join("")}</div>
+    </div>`;
+  }).join("");
+}
+
+function drawWorked() {
+  if (!evalData.samples.length) { $("#worked").innerHTML = '<p class="muted">No saved predictions.</p>'; return; }
+  const m = evalData.samples[sampleIndex];
+  const P = [m.prob.H, m.prob.D, m.prob.A], o = ["H", "D", "A"].indexOf(m.result), Y = [0, 1, 2].map((i) => (i === o ? 1 : 0));
+  const pick = P.indexOf(Math.max(...P));
+  const names = [`${m.home} win`, "Draw", `${m.away} win`];
+  const ll = -Math.log(P[o]);
+  const brier = P.reduce((a, p, i) => a + (p - Y[i]) ** 2, 0);
+  const c1 = P[0] - Y[0], c2 = P[0] + P[1] - Y[0] - Y[1], rps = (c1 ** 2 + c2 ** 2) / 2;
+  const f = (v) => v.toFixed(3);
+  $("#worked").innerHTML = `
+    <div class="worked-match"><span class="date">${m.date} · ${m.season} (test season)</span>
+      <span class="wm-teams">${esc(m.home)} <strong>${m.score}</strong> ${esc(m.away)}</span>
+      <span class="muted">Prediction made before kick-off: ${names.map((n, i) => `${esc(n)} <strong>${pct(P[i], 1)}</strong>`).join(" · ")}</span></div>
+    <ol class="worked-steps">
+      <li><b>Accuracy:</b> the model's pick was <em>${esc(names[pick])}</em> (highest probability). It ended <em>${esc(names[o])}</em>, so this match counts as <strong>${pick === o ? "correct (1)" : "wrong (0)"}</strong>.</li>
+      <li><b>Log loss:</b> −ln(probability given to ${esc(names[o])}) = −ln(${f(P[o])}) = <strong>${f(ll)}</strong></li>
+      <li><b>Brier:</b> (${f(P[0])} − ${Y[0]})² + (${f(P[1])} − ${Y[1]})² + (${f(P[2])} − ${Y[2]})² = <strong>${f(brier)}</strong></li>
+      <li><b>RPS:</b> ½ × [ (${f(P[0])} − ${Y[0]})² + (${f(P[0] + P[1])} − ${Y[0] + Y[1]})² ] = ½ × [ ${f(c1 ** 2)} + ${f(c2 ** 2)} ] = <strong>${f(rps)}</strong></li>
+    </ol>
+    <p class="footnote">Doing this for all ${evalEntry.matches.toLocaleString("en")} test matches and taking the average gives the numbers above (the sample shown is from the model the app uses, 2018-19 to 2025-26). Match ${sampleIndex + 1} of ${evalData.samples.length} random test matches.</p>`;
+}
+
+function drawWalkForward() {
+  const recent = evalEntry.period.startsWith("2018");
+  const folds = evalData.folds.filter((f) => !recent || f.test >= "2018-19");
+  const first = 2000, last = 2025, rowH = 26, left = 150, right = 120;
+  const { svg, width } = svgFor($("#walk-forward"), folds.length * rowH + 30);
+  svg.setAttribute("aria-label", "Walk-forward training and test seasons");
+  const narrow = width < 560;
+  const L = narrow ? 70 : left, R = narrow ? 8 : right;
+  const X = (y) => L + ((y - first) / (last - first + 1)) * (width - L - R);
+  const cw = X(1) - X(0);
+  folds.forEach((f, i) => {
+    const y = i * rowH + 4, test = +f.test.slice(0, 4);
+    const lab = el("text", { x: L - 10, y: y + rowH / 2 - 2, "text-anchor": "end", "dominant-baseline": "middle" }, svg);
+    lab.textContent = narrow ? f.test.slice(2) : `Test ${f.test}`;
+    el("rect", { x: X(2001), y: y + 3, width: X(test) - X(2001) - 1, height: rowH - 10, rx: 3, fill: css("--draw"), opacity: 0.55 }, svg);
+    el("rect", { x: X(test), y: y + 3, width: cw - 1, height: rowH - 10, rx: 3, fill: css("--home") }, svg);
+    if (!narrow) {
+      const t = el("text", { x: width - R + 10, y: y + rowH / 2 - 2, "dominant-baseline": "middle" }, svg);
+      t.textContent = `${f.train_matches.toLocaleString("en")} → 380`;
+    }
+    const hit = el("rect", { x: 0, y, width, height: rowH, class: "hit" }, svg);
+    hit.addEventListener("pointermove", (ev) => tip.show(`<strong>Predicting ${f.test}</strong><br>Trained on ${f.train_from} to ${f.train_to}: ${f.train_matches.toLocaleString("en")} matches<br>Tested on 380 matches it had never seen`, ev.clientX, ev.clientY));
+    hit.addEventListener("pointerleave", () => tip.hide());
+  });
+  for (const yv of [2001, 2006, 2011, 2016, 2021, 2025]) {
+    const t = el("text", { x: X(yv) + cw / 2, y: folds.length * rowH + 22, "text-anchor": "middle" }, svg);
+    t.textContent = `'${String(yv).slice(2)}`;
+  }
+}
+
+/* ---------------------------------------------------------------- data */
+const dataState = { key: null, page: 0, size: 50, sort: "", dir: "asc", q: "", season: "", team: "", hidden: {} };
+let datasets = [], dataToken = 0, searchTimer;
+
+async function initData() {
+  ({ datasets } = await api("/api/datasets"));
+  $("#dataset-grid").innerHTML = datasets.map((d) => `
+    <button type="button" class="dataset" role="listitem" data-key="${d.key}" aria-pressed="false">
+      <span class="ds-kind ${d.kind}">${d.kind === "raw" ? "As downloaded" : "Built by this project"}</span>
+      <span class="ds-name">${esc(d.name)}</span>
+      <span class="ds-source">${esc(d.source)}</span>
+    </button>`).join("");
+  $("#dataset-grid").addEventListener("click", (e) => {
+    const b = e.target.closest(".dataset");
+    if (b) selectDataset(b.dataset.key);
+  });
+  $("#data-search").addEventListener("input", () => {
+    clearTimeout(searchTimer);
+    searchTimer = setTimeout(() => { dataState.q = $("#data-search").value; dataState.page = 0; loadData(); }, 250);
+  });
+  $("#data-season").addEventListener("change", () => { dataState.season = $("#data-season").value; dataState.page = 0; loadData(); });
+  $("#data-team").addEventListener("change", () => { dataState.team = $("#data-team").value; dataState.page = 0; loadData(); });
+  $("#data-size").addEventListener("change", () => { dataState.size = +$("#data-size").value; dataState.page = 0; loadData(); });
+  $("#data-prev").addEventListener("click", () => { dataState.page -= 1; loadData(); });
+  $("#data-next").addEventListener("click", () => { dataState.page += 1; loadData(); });
+  $("#cols-all").addEventListener("click", () => { dataState.hidden[dataState.key] = new Set(); renderTable(); });
+  $("#cols-reset").addEventListener("click", () => { delete dataState.hidden[dataState.key]; renderTable(); });
+  $("#columns-list").addEventListener("change", (e) => {
+    const box = e.target.closest("input");
+    if (!box) return;
+    const hidden = dataState.hidden[dataState.key];
+    box.checked ? hidden.delete(box.value) : hidden.add(box.value);
+    renderTable();
+  });
+  $("#data-table").addEventListener("click", (e) => {
+    const th = e.target.closest("th[data-col]");
+    if (!th) return;
+    const col = th.dataset.col;
+    dataState.dir = dataState.sort === col && dataState.dir === "asc" ? "desc" : "asc";
+    dataState.sort = col;
+    dataState.page = 0;
+    loadData();
+  });
+  await selectDataset("matches");
+}
+
+async function selectDataset(key) {
+  Object.assign(dataState, { key, page: 0, sort: "", dir: "asc", q: "", season: "", team: "" });
+  $("#data-search").value = "";
+  $$("#dataset-grid .dataset").forEach((b) => b.setAttribute("aria-pressed", b.dataset.key === key));
+  const d = datasets.find((x) => x.key === key);
+  $("#dataset-info").innerHTML = `
+    <div class="di-main"><h2>${esc(d.name)}</h2><p class="muted">${esc(d.description)}</p></div>
+    <dl class="di-facts">
+      <div><dt>Source</dt><dd>${d.source_url ? `<a href="${d.source_url}" target="_blank" rel="noopener">${esc(d.source)}</a>` : esc(d.source)}</dd></div>
+      ${d.licence ? `<div><dt>Licence</dt><dd>${esc(d.licence)}</dd></div>` : ""}
+      <div><dt>File in the project</dt><dd><code>${esc(d.file)}</code></dd></div>
+      <div><dt>Rows</dt><dd id="di-rows">…</dd></div>
+    </dl>`;
+  await loadData(true);
+}
+
+function dataQuery() {
+  const p = new URLSearchParams({ dataset: dataState.key, page: dataState.page, size: dataState.size, dir: dataState.dir });
+  for (const k of ["sort", "q", "season", "team"]) if (dataState[k]) p.set(k, dataState[k]);
+  return p.toString();
+}
+
+let dataResult;
+async function loadData(fresh = false) {
+  const token = ++dataToken;
+  $("#data-table-wrap").classList.add("loading");
+  try {
+    const r = await api(`/api/data?${dataQuery()}`);
+    if (token !== dataToken) return;
+    dataResult = r;
+    dataState.page = r.page;
+    if (fresh) {
+      $("#data-season").innerHTML = `<option value="">All seasons</option>` + r.seasons.map((s) => `<option>${esc(s)}</option>`).join("");
+      $("#data-team").innerHTML = `<option value="">All teams</option>` + r.teams.map((t) => `<option>${esc(t)}</option>`).join("");
+      $("#data-season").hidden = !r.seasons.length;
+      $("#data-team").hidden = !r.teams.length;
+      $("#di-rows").textContent = `${r.total.toLocaleString("en")} × ${r.columns.length} columns`;
+    }
+    if (!dataState.hidden[dataState.key]) dataState.hidden[dataState.key] = new Set(r.columns.slice(14).map((c) => c.name));
+    renderTable();
+  } catch (err) {
+    if (token === dataToken) toast(err.message);
+  } finally {
+    if (token === dataToken) $("#data-table-wrap").classList.remove("loading");
+  }
+}
+
+function formatCell(v, numeric) {
+  if (v === null || v === undefined) return '<span class="na">–</span>';
+  if (v === true) return "✓";
+  if (v === false) return '<span class="na">✗</span>';
+  if (numeric && typeof v === "number" && !Number.isInteger(v)) return String(+v.toFixed(3));
+  return esc(v);
+}
+
+function renderTable() {
+  const r = dataResult, hidden = dataState.hidden[dataState.key] || new Set();
+  const cols = r.columns.map((c, i) => ({ ...c, i })).filter((c) => !hidden.has(c.name));
+  $("#columns-list").innerHTML = r.columns.map((c) => `<label><input type="checkbox" value="${esc(c.name)}" ${hidden.has(c.name) ? "" : "checked"}> ${esc(c.name)}</label>`).join("");
+  const arrow = (c) => (dataState.sort === c ? (dataState.dir === "asc" ? " ▲" : " ▼") : "");
+  $("#data-table").innerHTML =
+    `<thead><tr>${cols.map((c) => `<th data-col="${esc(c.name)}" class="${c.numeric ? "num" : ""}" aria-sort="${dataState.sort === c.name ? (dataState.dir === "asc" ? "ascending" : "descending") : "none"}" title="Sort by ${esc(c.name)}">${esc(c.name)}${arrow(c.name)}</th>`).join("")}</tr></thead>` +
+    `<tbody>${r.rows.length ? r.rows.map((row) => `<tr>${cols.map((c) => `<td class="${c.numeric ? "num" : ""}">${formatCell(row[c.i], c.numeric)}</td>`).join("")}</tr>`).join("")
+      : `<tr><td class="empty" colspan="${cols.length}">No rows match these filters.</td></tr>`}</tbody>`;
+  const from = r.matching ? r.page * r.size + 1 : 0, to = Math.min(r.matching, (r.page + 1) * r.size);
+  $("#data-count").textContent = `Rows ${from.toLocaleString("en")}–${to.toLocaleString("en")} of ${r.matching.toLocaleString("en")}` + (r.matching !== r.total ? ` (filtered from ${r.total.toLocaleString("en")})` : "") + ` · ${cols.length} of ${r.columns.length} columns shown`;
+  $("#data-page").textContent = `Page ${r.page + 1} of ${r.pages.toLocaleString("en")}`;
+  $("#data-prev").disabled = r.page <= 0;
+  $("#data-next").disabled = r.page >= r.pages - 1;
+  $("#data-download").href = `/api/data.csv?${dataQuery()}`;
+  $("#data-download").textContent = `Download CSV (${r.matching.toLocaleString("en")} rows)`;
+}
+
 /* ---------------------------------------------------------------- boot */
 window.addEventListener("hashchange", route);
 let resizeTimer;
@@ -621,6 +1003,8 @@ window.addEventListener("resize", () => {
   resizeTimer = setTimeout(() => {
     moveThumb($(".chrome .segmented"));
     if (loaded.has("models")) moveThumb($("#metric-switch"));
+    if (loaded.has("evaluation")) moveThumb($("#calib-switch"));
+    moveThumb($("#xg-switch"));
     redraw[current]?.();
   }, 120);
 });

@@ -19,7 +19,9 @@
         <a href="#predict" data-view="predict">Predict</a>
         <a href="#teams" data-view="teams">Teams</a>
         <a href="#models" data-view="models">Models</a>
+        <a href="#evaluation" data-view="evaluation">Evaluation</a>
         <a href="#seasons" data-view="seasons">Seasons</a>
+        <a href="#data" data-view="data">Data</a>
         <a href="#about" data-view="about">About</a>
       </nav>
     </div>
@@ -70,6 +72,54 @@
         <div class="loading-veil" aria-hidden="true"><span class="spinner"></span></div>
       </div>
 
+      <div class="card" id="explain-card" hidden>
+        <div class="card-head">
+          <h2>How these numbers are calculated</h2>
+          <p class="muted">Three steps, using the model's real values for this fixture. The numbers at each step lead exactly to the percentages above.</p>
+        </div>
+
+        <div class="step-block">
+          <p class="step-title"><span class="step-dot">1</span>Expected goals for each team</p>
+          <div class="segmented small" id="xg-switch" role="group" aria-label="Team">
+            <span class="segmented-thumb" aria-hidden="true"></span>
+            <button type="button" data-side="home" aria-pressed="true">Home goals</button>
+            <button type="button" data-side="away">Away goals</button>
+          </div>
+          <p class="explain-text" id="xg-intro"></p>
+          <div class="factors" id="xg-factors"></div>
+          <p class="formula" id="xg-formula"></p>
+          <details class="more">
+            <summary>How is each "×" worked out?</summary>
+            <p>The model learned one <em>weight</em> per input from 9,000+ past matches (a Poisson regression). For this fixture it measures how unusual each input is: <code>z = (value − average) ÷ spread</code>. The effect of that input is <code>e<sup>weight × z</sup></code>: above 1 raises the expected goals, below 1 lowers them. Some inputs overlap (three of them are based on Elo), so one weight on its own can look odd; only their combined effect matters.</p>
+            <div class="table-wrap"><table class="table numbers" id="xg-table"></table></div>
+          </details>
+        </div>
+
+        <div class="step-block">
+          <p class="step-title"><span class="step-dot">2</span>From expected goals to the chance of each number of goals</p>
+          <p class="explain-text">Goals in football follow a <strong>Poisson distribution</strong> (Maher, 1982): if a team is expected to score λ goals, the chance it scores exactly <em>k</em> is <code>λ<sup>k</sup> × e<sup>−λ</sup> ÷ k!</code></p>
+          <div class="grid-2 tight">
+            <div><p class="section-label home" id="dist-home-label"></p><div class="chart" id="dist-home"></div></div>
+            <div><p class="section-label away" id="dist-away-label"></p><div class="chart" id="dist-away"></div></div>
+          </div>
+          <p class="formula" id="poisson-example"></p>
+        </div>
+
+        <div class="step-block">
+          <p class="step-title"><span class="step-dot">3</span>Every exact score, then add them up</p>
+          <p class="explain-text">The chance of a score is home chance × away chance, e.g. <span id="grid-example"></span>. Adding up all the scores where the home team has more goals gives the home-win chance, and so on.</p>
+          <div class="score-grid-wrap"><div class="score-grid" id="score-grid"></div></div>
+          <div class="sums" id="grid-sums"></div>
+          <p class="footnote" id="grid-note"></p>
+        </div>
+
+        <div class="step-block last">
+          <p class="step-title"><span class="step-dot">+</span>The Elo rating, one of the inputs</p>
+          <p class="formula" id="elo-formula"></p>
+          <p class="footnote">Elo's expected score counts a draw as half a win. It feeds into step 1 as an input; it isn't the final answer on its own.</p>
+        </div>
+      </div>
+
       <div class="card" id="lineup-card" hidden>
         <div class="card-head">
           <h2>Expected starting eleven</h2>
@@ -112,8 +162,8 @@
     <!-- ============================== MODELS ============================== -->
     <section class="view" id="view-models" data-view="models" hidden>
       <div class="hero">
-        <p class="eyebrow">Evaluation</p>
-        <h1 class="display">How good is it?</h1>
+        <p class="eyebrow">Models</p>
+        <h1 class="display">Which model is best?</h1>
         <p class="lede">Each season from 2014-15 on was predicted by models trained only on earlier seasons, the same way you'd use it in real life.</p>
       </div>
       <div class="tiles" id="model-tiles"></div>
@@ -145,22 +195,77 @@
           <div class="chart" id="importance"></div>
         </div>
         <div class="card">
-          <div class="card-head"><h2>The draw problem</h2><p class="muted">What the model picked vs what happened</p></div>
-          <div id="confusion"></div>
-          <p class="footnote">A draw is almost never the single most likely result, so it's (almost) never picked, even though 1 in 4 matches ends level.</p>
-        </div>
-      </div>
-      <div class="grid-2">
-        <div class="card">
-          <div class="card-head"><h2>Honest probabilities</h2><p class="muted">Home win: predicted chance vs how often it happened</p></div>
-          <div class="legend" id="calib-legend"></div>
-          <div class="chart" id="calibration"></div>
-        </div>
-        <div class="card">
           <div class="card-head"><h2>Version 1 vs version 2</h2><p class="muted">The original project's 38 test matches</p></div>
           <div class="chart" id="original"></div>
           <p class="footnote">On only 38 matches even "always pick the home team" scores 57.9 %, so a small test can't tell good models from lucky ones. That's why this version tests on 4,560 matches.</p>
         </div>
+      </div>
+    </section>
+
+    <!-- ============================== EVALUATION ============================== -->
+    <section class="view" id="view-evaluation" data-view="evaluation" hidden>
+      <div class="hero">
+        <p class="eyebrow">Evaluation</p>
+        <h1 class="display">How accurate is it?</h1>
+        <p class="lede">Every standard way of measuring a prediction model, calculated on matches the model had never seen, with the formulas and a worked example so you can check them yourself.</p>
+      </div>
+
+      <div class="card toolbar-card">
+        <label class="inline-pick">Model <select id="eval-model" aria-label="Model to evaluate"></select></label>
+        <span class="muted" id="eval-period"></span>
+      </div>
+
+      <div class="tiles" id="eval-tiles"></div>
+
+      <div class="card">
+        <div class="card-head"><h2>How the test was done</h2><p class="muted">Walk-forward testing: to predict a season, the model only learns from the seasons before it, like in real life</p></div>
+        <div class="chart" id="walk-forward"></div>
+        <div class="legend"><span><i style="background:var(--draw)"></i>Training seasons</span><span><i style="background:var(--home)"></i>Test season (predicted, never seen)</span></div>
+      </div>
+
+      <div class="card">
+        <div class="card-head"><h2>Classification report</h2><p class="muted">How good the model's single pick (its most likely result) is, for each outcome</p></div>
+        <div class="table-wrap"><table class="table numbers report" id="class-report"></table></div>
+        <dl class="glossary">
+          <div><dt>Precision</dt><dd>When the model picks this result, how often is it right? <code>correct picks ÷ all picks of it</code></dd></div>
+          <div><dt>Recall</dt><dd>Of all matches that really ended this way, how many did the model pick? <code>correct picks ÷ real cases</code></dd></div>
+          <div><dt>F1 score</dt><dd>One number combining both: <code>2 × precision × recall ÷ (precision + recall)</code></dd></div>
+          <div><dt>Support</dt><dd>How many test matches really ended this way.</dd></div>
+        </dl>
+      </div>
+
+      <div class="grid-2">
+        <div class="card">
+          <div class="card-head"><h2>Confusion matrix</h2><p class="muted">Rows: what really happened. Columns: what the model picked.</p></div>
+          <div id="eval-confusion"></div>
+          <p class="footnote" id="draw-note"></p>
+        </div>
+        <div class="card">
+          <div class="card-head row">
+            <div><h2>Calibration</h2><p class="muted">When it says X %, does it happen X % of the time?</p></div>
+            <div class="segmented small" id="calib-switch" role="group" aria-label="Outcome">
+              <span class="segmented-thumb" aria-hidden="true"></span>
+              <button type="button" data-outcome="H" aria-pressed="true">Home</button>
+              <button type="button" data-outcome="D">Draw</button>
+              <button type="button" data-outcome="A">Away</button>
+            </div>
+          </div>
+          <div class="legend" id="calib-legend"></div>
+          <div class="chart" id="calibration"></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-head"><h2>Probability scores</h2><p class="muted">Accuracy only checks the single pick. These scores judge the whole probability (e.g. 55 % / 25 % / 20 %), so a confident wrong prediction is punished more than a careful one.</p></div>
+        <div class="metric-list" id="metric-list"></div>
+      </div>
+
+      <div class="card">
+        <div class="card-head row">
+          <div><h2>Worked example</h2><p class="muted">Every metric, calculated by hand for one real test match</p></div>
+          <button type="button" class="button secondary inline" id="another-match">Another match</button>
+        </div>
+        <div id="worked"></div>
       </div>
     </section>
 
@@ -185,6 +290,50 @@
           <div class="card-head"><h2>Predictions</h2><p class="muted" id="matches-note"></p></div>
           <ul class="matches" id="match-list"></ul>
           <button type="button" class="button secondary" id="show-more" hidden>Show more</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================== DATA ============================== -->
+    <section class="view" id="view-data" data-view="data" hidden>
+      <div class="hero">
+        <p class="eyebrow">Data</p>
+        <h1 class="display">See the data</h1>
+        <p class="lede">Every dataset behind the project, row by row. Search, filter, sort, pick columns, and download exactly what you see as a CSV file.</p>
+      </div>
+
+      <div class="dataset-grid" id="dataset-grid" role="list"></div>
+
+      <div class="card dataset-info" id="dataset-info"></div>
+
+      <div class="card data-card">
+        <div class="data-toolbar">
+          <label class="search">
+            <svg viewBox="0 0 20 20" width="16" height="16" aria-hidden="true"><circle cx="8.5" cy="8.5" r="5.5" fill="none" stroke="currentColor" stroke-width="2"/><path d="M13 13l4 4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+            <input type="search" id="data-search" placeholder="Search all text columns" aria-label="Search">
+          </label>
+          <select id="data-season" aria-label="Season"></select>
+          <select id="data-team" aria-label="Team"></select>
+          <details class="columns-menu" id="columns-menu">
+            <summary class="button secondary inline">Columns</summary>
+            <div class="columns-pop">
+              <div class="columns-actions"><button type="button" class="link" id="cols-all">Show all</button><button type="button" class="link" id="cols-reset">Reset</button></div>
+              <div class="columns-list" id="columns-list"></div>
+            </div>
+          </details>
+          <a class="button inline" id="data-download" href="#" download>Download CSV</a>
+        </div>
+        <div class="data-table-wrap" id="data-table-wrap">
+          <table class="data-table" id="data-table"></table>
+        </div>
+        <div class="pager">
+          <span class="muted" id="data-count"></span>
+          <span class="pager-controls">
+            <select id="data-size" aria-label="Rows per page"><option>25</option><option selected>50</option><option>100</option><option>250</option></select>
+            <button type="button" class="button secondary inline" id="data-prev" aria-label="Previous page">‹</button>
+            <span id="data-page" class="muted"></span>
+            <button type="button" class="button secondary inline" id="data-next" aria-label="Next page">›</button>
+          </span>
         </div>
       </div>
     </section>
