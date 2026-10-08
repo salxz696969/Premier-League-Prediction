@@ -8,6 +8,7 @@ This is version 2 of [premier-league-prediction-2019-2020](https://github.com/sa
 * **Leakage-safe features**: Elo ratings, form, league table, rest days and head-to-head, all computed from past matches only and checked by an automated test
 * **Honest evaluation**: walk-forward testing on 12 full seasons (4,560 matches the models never saw)
 * **A professional benchmark**: our models are compared with bookmaker odds
+* **Extra data, tested properly**: every cup, European and international-break date (fatigue) and Fantasy Premier League player influence, each checked on whether it really improves predictions
 * **Sources for everything**, listed in [`SOURCES.md`](SOURCES.md)
 * **A web app to show it all**: predictor, team ratings, model results and a season explorer
 
@@ -24,9 +25,9 @@ It runs on your own computer and needs no internet connection, so it's safe for 
 
 | Section | What it shows |
 |---|---|
-| **Predict** | Pick any two current teams: win/draw/loss probabilities, expected goals, the 5 most likely scores, and *why* (Elo, form, position and goals side by side) |
+| **Predict** | Pick any two current teams: win/draw/loss probabilities, expected goals, the 5 most likely scores, each team's expected starting eleven with every player's FPL influence, and *why* (Elo, form, position, goals and starting-XI strength side by side) |
 | **Teams** | Current Elo ranking, plus Elo history since 2000 for up to 4 teams (hover for values) |
-| **Models** | Every model vs the bookmaker and the baseline (accuracy, RPS, log loss), season-by-season accuracy, feature importance, the draw problem, calibration, and version 1 vs version 2 |
+| **Models** | Every model vs the bookmaker and the baseline (accuracy, RPS, log loss), season-by-season accuracy, whether extra data helps, feature importance, the draw problem, calibration, and version 1 vs version 2 |
 | **Seasons** | Final table of any season from 2000-01; for 2014-15 onwards, every pre-match prediction with ✓/✗, filterable by team (try Leicester 2015-16) |
 | **About** | The method in four steps, plus sources |
 
@@ -91,11 +92,50 @@ Interesting seasons: **2015-16** (Leicester City won the league as 5000-1 outsid
 
 ---
 
+## Extra data: other competitions, international breaks, players, managers
+
+All from real, published datasets (see [`SOURCES.md`](SOURCES.md)); nothing is generated or typed in by hand.
+
+| Data | What we use it for | Seasons covered | Source |
+|---|---|---|---|
+| FA Cup | fatigue (match dates) | 2000-01 to 2024-25 | engsoccerdata (to 2017-18), openfootball (2018-19 on) |
+| League (Carabao) Cup | fatigue | 2000-01 to 2024-25 | engsoccerdata, openfootball |
+| Champions League | fatigue, "European match in the last / next 4 days" | 2000-01 to 2025-26 | engsoccerdata (to 2010-11), openfootball (2011-12 on) |
+| Europa League | same | **2020-21 to 2024-25 only** | openfootball |
+| International breaks | "first league match after a break" | 2000-01 to 2025-26 | martj42/international_results |
+| Players (FPL) | starting-XI strength, key players missing, XI price | 2016-17 to 2025-26 | vaastav/Fantasy-Premier-League |
+| Managers | tenure, "new manager bounce", record | 2012-13 onwards, **not included yet** | Transfermarkt (dcaribou/transfermarkt-datasets), see below |
+
+**Gaps, stated honestly:** Europa League matches before 2020-21 and the 2025-26 domestic cups aren't in any free source this project could reach, so rest days in those seasons only count the competitions that are available. Player data starts in 2016-17 (FPL's history); earlier seasons have no player features and the models are told they're missing.
+
+**Player features** (`src/eplpred/players.py`): each player is rated by his FPL *influence* per 90 minutes over his previous 15 appearances, never the current match. A team's *starting-XI strength* is the sum over its starters. Team sheets are public an hour before kick-off, so the starting eleven is pre-match information. FPL only records starts from 2022-23; for earlier seasons the 11 players with most minutes are used, which matches the real eleven for 97.6 % of starters (`scripts/check_player_data.py`). For a future match in the app, each team's most-used eleven from its last 5 matches is assumed.
+
+**Managers** (`src/eplpred/managers.py`): the code is ready, but the Transfermarkt file can't be downloaded from the environment this was built in. To add it, download `games.csv.gz` from [transfermarkt-datasets](https://github.com/dcaribou/transfermarkt-datasets), put it in `data/raw/managers/`, and run steps 2–5 again. The features switch on automatically.
+
+### Does it help? (`scripts/05_extended_experiment.py`)
+
+Same walk-forward test on the 8 seasons that have player data in training too (2018-19 to 2025-26, 3,040 matches), Poisson goals model:
+
+| Features | Accuracy | RPS ↓ | RPS change vs base (95 % range) |
+|---|---:|---:|---|
+| Base (49 features) | 53.9 % | 0.2007 | |
+| + fatigue (all competitions, international breaks) | 53.5 % | 0.2011 | +0.0004 (−0.0001 to +0.0011): no help |
+| **+ players (FPL)** | **54.4 %** | **0.1998** | **−0.0008 (−0.0018 to +0.0001): small gain** |
+| + everything | 54.2 % | 0.2002 | −0.0005 (−0.0016 to +0.0006) |
+| Bookmaker (benchmark) | 54.9 % | 0.1966 | |
+
+![Extra data](reports/figures/extended_comparison.png)
+
+**Takeaways:** knowing *who plays* helps a little and closes part of the gap to the bookmaker. Fatigue from other competitions doesn't help. A likely reason: the teams that play most midweek games are also the strongest, which Elo and form already capture. The app therefore uses **base + player features**. Full results for all four models: [`reports/extended_results.csv`](reports/extended_results.csv).
+
+---
+
 ## What changed from version 1
 
 | | Version 1 | Version 2 (this repo) |
 |---|---|---|
 | Data | 2019-20 only (288 matches; data stops in March 2020) | 26 complete seasons, 9,880 matches |
+| Cups / Europe / players | 2019-20 only, partly broken dates; one FPL season | Cups & Europe 2000-01 on, internationals, FPL players 2016-17 to 2025-26, all from published sources |
 | Extra data | ~2,500 generated rows that aren't real matches (e.g. "matchday 50", matches in July 2016) | None; every match is real |
 | Data source | Mixed, partly manual cleaning | Football-Data.co.uk, downloaded and checked by a script |
 | Leakage | League position "after 20 games" used for every match | Every feature uses only earlier matches, and an automated test checks it |
@@ -156,6 +196,7 @@ uv run python scripts/01_download_data.py    # raw CSVs -> data/processed/matche
 uv run python scripts/02_build_features.py   # -> data/processed/features.csv
 uv run python scripts/03_evaluate_models.py  # walk-forward test -> reports/*.csv
 uv run python scripts/04_make_figures.py     # -> reports/figures/*.png
+uv run python scripts/05_extended_experiment.py  # does extra data help? (~6 minutes)
 
 uv run pytest                                # tests (incl. the leakage test)
 ```
@@ -167,10 +208,10 @@ uv run python scripts/predict_match.py "Arsenal" "Chelsea"
 ```
 ```
 Arsenal vs Chelsea
-  Home win :  67.4%
-  Draw     :  19.7%
-  Away win :  13.0%
-  Expected goals: 2.07 - 0.78 (most likely score 2-0)
+  Home win :  64.9%
+  Draw     :  20.9%
+  Away win :  14.2%
+  Expected goals: 1.95 - 0.78 (most likely score 1-0)
 ```
 
 **Web app:** `uv run python app.py` (see [The app](#the-app) above). Add `--port 8080` to change the port or `--no-browser` to stop it opening a browser tab.
@@ -188,17 +229,19 @@ Without uv: `pip install -e . pytest`, then run the same `python app.py` / `pyth
 3. **Features without cheating:** explain leakage and how the test checks for it; show `elo_history.png`.
 4. **Fair testing:** walk-forward by season, and why 38 test matches are not enough → `season_2019_20_vs_original.png`.
 5. **Results:** `model_accuracy.png`, `accuracy_by_season.png`: best model vs bookmaker vs baseline.
-6. **Insights:** Elo carries most of the signal (`feature_importance.png`), draws are unpredictable (`confusion_matrix.png`), probabilities are calibrated (`calibration.png`).
-7. **Live demo:** `python app.py`: predict a fixture the class suggests, then show Leicester 2015-16 in *Seasons*.
-8. **Limitations and future work** (below), then **sources** (`SOURCES.md`).
+6. **Extra data:** does knowing the players or the fixture congestion help? (`extended_comparison.png`, the *Does extra data help?* card in the app)
+7. **Insights:** Elo carries most of the signal (`feature_importance.png`), draws are unpredictable (`confusion_matrix.png`), probabilities are calibrated (`calibration.png`).
+8. **Live demo:** `python app.py`: predict a fixture the class suggests, then show Leicester 2015-16 in *Seasons*.
+9. **Limitations and future work** (below), then **sources** (`SOURCES.md`).
 
 ---
 
 ## Limitations and ideas for future work
 
-* **No team news.** Injuries, suspensions, line-ups and transfers are not in the data. This is the main reason the bookmaker is still better.
+* **Limited team news.** Line-ups are used (from FPL, 2016-17 on), but not injury news, suspensions or transfers before they show up in a team sheet. In the app, future line-ups are a guess (most-used eleven).
 * **No expected goals (xG).** xG data would likely help, but free sources only start in 2014 and are hard to download reliably.
-* **League matches only.** Cup and European matches are not included, so rest days ignore midweek cup games.
+* **Gaps in cup data.** Europa League before 2020-21 and the 2025-26 domestic cups are missing from the free sources.
+* **No manager data yet.** The code is ready; the Transfermarkt file needs to be added (see above).
 * **Draws.** Predicting draws remains an open problem for every model.
 * **Ideas:** a Dixon–Coles low-score adjustment, xG-based features, player-level data, and simulating the rest of a season to predict the final table.
 
@@ -212,7 +255,7 @@ Without uv: `pip install -e . pytest`, then run the same `python app.py` / `pyth
 ├── app.py                    ← starts the web app
 ├── docs/screenshots/         ← screenshots of the app
 ├── data/
-│   ├── raw/                  ← downloaded files, unchanged (football-data/, odds/)
+│   ├── raw/                  ← downloaded files: football-data/, odds/, other_competitions/, players/ (managers/ when added)
 │   └── processed/            ← matches.csv (+ features.csv, rebuilt by step 2)
 ├── notebooks/walkthrough.ipynb
 ├── reports/
@@ -222,12 +265,13 @@ Without uv: `pip install -e . pytest`, then run the same `python app.py` / `pyth
 │   ├── predictions.csv       ← every test prediction
 │   ├── feature_importance.csv
 │   └── tuning_log.txt        ← how the settings were chosen
-├── scripts/                  ← 01_…04_ pipeline steps, run_all.py, predict_match.py, tune_models.py
-├── src/eplpred/              ← the code (config, data, elo, features, models, evaluation, plots, predict)
+├── scripts/                  ← 01_…05_ pipeline steps, run_all.py, predict_match.py, tune_models.py, check_player_data.py
+├── src/eplpred/              ← the code (config, data, elo, features, models, evaluation, plots, predict,
+│   │                            other_competitions, players, managers, extra_features)
 │   └── web/                  ← the app: api.py (data), server.py (web server), static/ (HTML, CSS, JS)
-└── tests/                    ← pytest tests (leakage, Elo, metrics, data, web app)
+└── tests/                    ← pytest tests (leakage incl. player data, Elo, metrics, data, extra data, web app)
 ```
 
 ## Data licence
 
-Match data: Football-Data.co.uk, via the DataHub mirror (PDDL v1.0). Odds: Club Football Match Data by Adam Gábor (MIT). See [`SOURCES.md`](SOURCES.md) for full citations. This project is for education and research.
+Match data: Football-Data.co.uk, via the DataHub mirror (PDDL v1.0). Odds: Club Football Match Data by Adam Gábor (MIT). Players: Fantasy Premier League data by Vaastav Anand (MIT). Cups and Europe: engsoccerdata (GPL-2 or later) and openfootball (CC0). Internationals: martj42/international_results (CC0). See [`SOURCES.md`](SOURCES.md) for full citations. This project is for education and research.

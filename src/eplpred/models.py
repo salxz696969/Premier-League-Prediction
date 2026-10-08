@@ -66,14 +66,17 @@ class HistoricalFrequency(BaseModel):
 class SklearnClassifier(BaseModel):
     """Wraps any scikit-learn classifier with missing-value handling."""
 
-    def __init__(self, name, estimator, columns=None, scale=False):
+    def __init__(self, name, estimator, columns=None, scale=False, missing_indicator=False):
         self.name = name
         self.estimator = estimator
         self.columns = columns
         self.scale = scale
+        # Adds a 0/1 "was missing" column per feature, for data that only
+        # exists in some seasons (players, managers).
+        self.missing_indicator = missing_indicator
 
     def fit(self, train):
-        steps = [SimpleImputer(strategy="median")]
+        steps = [SimpleImputer(strategy="median", add_indicator=self.missing_indicator)]
         if self.scale:
             steps.append(StandardScaler())
         self.columns_ = self.columns or feature_columns()
@@ -97,14 +100,20 @@ class PoissonGoals(BaseModel):
     name = "Poisson goals model"
     max_goals = 10
 
-    def __init__(self, alpha: float = 0.1):
+    def __init__(self, alpha: float = 0.1, columns=None, missing_indicator=False):
         self.alpha = alpha
+        self.columns = columns
+        self.missing_indicator = missing_indicator
 
     def _pipeline(self):
-        return make_pipeline(SimpleImputer(strategy="median"), StandardScaler(), PoissonRegressor(alpha=self.alpha, max_iter=1000))
+        return make_pipeline(
+            SimpleImputer(strategy="median", add_indicator=self.missing_indicator),
+            StandardScaler(),
+            PoissonRegressor(alpha=self.alpha, max_iter=1000),
+        )
 
     def fit(self, train):
-        self.columns_ = feature_columns()
+        self.columns_ = self.columns or feature_columns()
         self.home_ = self._pipeline().fit(train[self.columns_], train["home_goals"])
         self.away_ = self._pipeline().fit(train[self.columns_], train["away_goals"])
         return self
@@ -141,46 +150,40 @@ class Ensemble(BaseModel):
         return np.mean([m.predict_proba(test) for m in self.members], axis=0)
 
 
-def make_models() -> list[BaseModel]:
+def make_models(columns: list[str] | None = None) -> list[BaseModel]:
     """All models in the comparison. Settings were chosen on seasons before
-    2014-15 only (see ``scripts/tune_models.py``), never on the test seasons."""
+    2014-15 only (see ``scripts/tune_models.py``), never on the test seasons.
+
+    ``columns`` swaps in a different feature list (e.g. the extended features);
+    by default the 49 base features are used.
+    """
     rs = config.RANDOM_STATE
+    extra = {"columns": columns, "missing_indicator": columns is not None}
+
+    def lr():
+        return SklearnClassifier("Logistic regression", LogisticRegression(C=0.01, max_iter=2000), scale=True, **extra)
+
+    def gb():
+        return SklearnClassifier(
+            "Gradient boosting",
+            HistGradientBoostingClassifier(
+                learning_rate=0.03, max_iter=200, max_depth=2, min_samples_leaf=80, l2_regularization=1.0, random_state=rs
+            ),
+            **extra,
+        )
+
     return [
         HistoricalFrequency(),
-        SklearnClassifier(
-            "Elo only (logistic regression)",
-            LogisticRegression(max_iter=1000),
-            columns=["elo_diff"],
-        ),
-        SklearnClassifier(
-            "Logistic regression",
-            LogisticRegression(C=0.01, max_iter=2000),
-            scale=True,
-        ),
+        SklearnClassifier("Elo only (logistic regression)", LogisticRegression(max_iter=1000), columns=["elo_diff"]),
+        lr(),
         SklearnClassifier(
             "Random forest",
             RandomForestClassifier(
                 n_estimators=500, min_samples_leaf=40, max_features="sqrt", n_jobs=-1, random_state=rs
             ),
+            **extra,
         ),
-        SklearnClassifier(
-            "Gradient boosting",
-            HistGradientBoostingClassifier(
-                learning_rate=0.03, max_iter=200, max_depth=2, min_samples_leaf=80, l2_regularization=1.0, random_state=rs
-            ),
-        ),
-        PoissonGoals(alpha=0.1),
-        Ensemble(
-            "Ensemble (LR + GB + Poisson)",
-            [
-                SklearnClassifier("lr", LogisticRegression(C=0.01, max_iter=2000), scale=True),
-                SklearnClassifier(
-                    "gb",
-                    HistGradientBoostingClassifier(
-                        learning_rate=0.03, max_iter=200, max_depth=2, min_samples_leaf=80, l2_regularization=1.0, random_state=rs
-                    ),
-                ),
-                PoissonGoals(alpha=0.1),
-            ],
-        ),
+        gb(),
+        PoissonGoals(alpha=0.1, **extra),
+        Ensemble("Ensemble (LR + GB + Poisson)", [lr(), gb(), PoissonGoals(alpha=0.1, **extra)]),
     ]

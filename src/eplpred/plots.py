@@ -216,3 +216,30 @@ def season_2019_comparison(table: pd.DataFrame) -> None:
     ax.xaxis.set_major_formatter(matplotlib.ticker.PercentFormatter(1.0))
     ax.set_title("The original test set (38 matches, Feb-Mar 2020) is too small:\neven \"always pick the home team\" scores as well as the best models", fontsize=11.5)
     _save(fig, "season_2019_20_vs_original.png")
+
+
+def extended_comparison(results: pd.DataFrame) -> None:
+    """Change in RPS from adding each kind of extra data (with 95 % intervals).
+
+    Left of zero = the extra data made predictions better.
+    """
+    rows = results[results["rps_change"].notna()].copy()
+    sets = list(dict.fromkeys(rows["feature_set"]))
+    models = list(dict.fromkeys(rows["model"]))
+    colours = dict(zip(sets, [BLUE, ORANGE, AQUA, VIOLET]))
+    fig, ax = plt.subplots(figsize=(9, 1.0 + 0.9 * len(models)))
+    step = 0.8 / max(1, len(sets))
+    for j, fset in enumerate(sets):
+        part = rows[rows["feature_set"] == fset].set_index("model").reindex(models)
+        y = np.arange(len(models)) + (j - (len(sets) - 1) / 2) * step
+        ax.errorbar(part["rps_change"], y,
+                    xerr=[part["rps_change"] - part["rps_change_low"], part["rps_change_high"] - part["rps_change"]],
+                    fmt="o", color=colours[fset], ecolor=colours[fset], elinewidth=1.5, capsize=0, markersize=6, label=fset)
+    ax.axvline(0, color=TEXT_2, linewidth=1)
+    ax.set_yticks(range(len(models)), models)
+    ax.invert_yaxis()
+    ax.grid(axis="y", visible=False)
+    ax.set_xlabel("Change in RPS vs base features  (← better   |   worse →)")
+    ax.set_title("Does extra data help? Test seasons 2018-19 to 2025-26")
+    ax.legend(loc="lower right", fontsize=9)
+    _save(fig, "extended_comparison.png")

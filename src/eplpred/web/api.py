@@ -32,6 +32,8 @@ class ProjectData:
         self.predictions = pd.read_csv(config.PREDICTIONS_CSV, parse_dates=["date"])
         self.importance = pd.read_csv(config.REPORTS_DIR / "feature_importance.csv")
         self.original = pd.read_csv(config.REPORTS_DIR / "comparison_with_original.csv")
+        extended = config.REPORTS_DIR / "extended_results.csv"
+        self.extended = pd.read_csv(extended) if extended.exists() else None
         candidates = self.overall[~self.overall["model"].isin([BOOKMAKER, BASELINE])]
         self.best_model = candidates.sort_values("rps").iloc[0]["model"]
         self._predict = lru_cache(maxsize=512)(self._predict_uncached)
@@ -79,7 +81,16 @@ class ProjectData:
                 "sot_share": f.get(f"{prefix}_ewm_sot_share"),
                 "season_ppg": f.get(f"{prefix}_season_ppg"),
                 "promoted": bool(f.get(f"{prefix}_promoted", 0)),
+                "xi_influence": f.get(f"{prefix}_xi_influence"),
+                "xi_value": f.get(f"{prefix}_xi_value"),
+                "key_missing": f.get(f"{prefix}_key_missing"),
             }
+
+        def lineup(team: str) -> dict | None:
+            if not self.predictor.use_players:
+                return None
+            info = self.predictor.lineups[team]
+            return {"players": info["players"], "missing": info["missing"]}
 
         return {
             "home": home,
@@ -90,6 +101,8 @@ class ProjectData:
             "top_scores": [{"score": s, "probability": pr} for s, pr in p.top_scores],
             "home_stats": side("home"),
             "away_stats": side("away"),
+            "home_lineup": lineup(home),
+            "away_lineup": lineup(away),
             "h2h_home_ppg": f.get("h2h_home_ppg"),
             "h2h_meetings": int(f.get("h2h_meetings", 0)),
             "model": self.predictor.model.name,
@@ -180,6 +193,7 @@ class ProjectData:
                 {"feature": r.label, "importance": float(r.importance), "std": float(r.std)} for r in top.itertuples()
             ],
             "original": _records(self.original),
+            "extended": _records(self.extended) if self.extended is not None else None,
         }
 
     # ------------------------------------------------------------------
