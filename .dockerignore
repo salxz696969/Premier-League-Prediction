@@ -9,6 +9,9 @@
 !data/
 !data/processed/
 !data/processed/matches.csv
+!data/raw/
+!data/raw/players/
+!data/raw/players/**
 !reports/
 !reports/*.csv
 !scripts/
@@ -18,7 +21,6 @@
 .venv/
 .git/
 .pytest_cache/
-data/raw/
 notebooks/
 docs/
 reports/figures/

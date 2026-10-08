@@ -18,6 +18,7 @@ COPY src ./src
 RUN uv sync --frozen --no-dev --python /usr/local/bin/python
 COPY app.py ./
 COPY data/processed/matches.csv ./data/processed/matches.csv
+COPY data/raw/players ./data/raw/players
 COPY reports/*.csv ./reports/
 COPY scripts/02_build_features.py ./scripts/02_build_features.py
 # Generate features at build time; the runtime filesystem can stay read-only.
