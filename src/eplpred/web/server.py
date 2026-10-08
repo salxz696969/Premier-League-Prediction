@@ -16,6 +16,7 @@ URLs
 /api/season?label=2019-20 league table (+ predictions for test seasons)
 /api/story                report (HTML) and slides, from the current results
 /figures/<name>.png       the charts in reports/figures
+/logos/<name>.png         club crests (data/raw/logos)
 /downloads/slides.pptx    the slides as PowerPoint (docs/slides.pptx)
 /downloads/REPORT.md      the report as Markdown (docs/REPORT.md)
 /api/datasets             every dataset the project uses (source, licence, file)
@@ -36,7 +37,7 @@ from urllib.parse import parse_qs
 import numpy as np
 from waitress import create_server
 
-from .. import config
+from .. import config, logos
 from .api import ProjectData
 
 STATIC_DIR = Path(__file__).parent / "static"
@@ -54,6 +55,10 @@ def _json_default(value):
     raise TypeError(f"Cannot serialise {type(value)}")
 
 
+def _one(query: dict, name: str) -> str:
+    return (query.get(name) or [""])[0]
+
+
 def make_application(project: ProjectData):
     routes = {
         "/healthz": lambda q: {"status": "ok"},
@@ -66,6 +71,15 @@ def make_application(project: ProjectData):
         "/api/seasons": lambda q: project.seasons(),
         "/api/season": lambda q: project.season(q["label"][0]),
         "/api/story": lambda q: project.story(),
+        "/api/football/overview": lambda q: {"seasons": project.football.seasons(),
+                                             "competitions": project.football.competitions(_one(q, "season") or project.football.seasons()[0])},
+        "/api/football/matches": lambda q: project.football.matches(_one(q, "season"), _one(q, "competition") or "premier_league", _one(q, "round") or None),
+        "/api/football/match": lambda q: project.football.match(int(_one(q, "id"))),
+        "/api/football/table": lambda q: project.football.table(_one(q, "season")),
+        "/api/football/team": lambda q: project.football.team(_one(q, "name"), _one(q, "season")),
+        "/api/football/players": lambda q: project.football.player_list(
+            _one(q, "season"), _one(q, "team"), _one(q, "position"), _one(q, "q"), _one(q, "sort") or "points", int(_one(q, "page") or 0)),
+        "/api/football/player": lambda q: project.football.player(_one(q, "key")),
         "/api/datasets": lambda q: project.explorer.catalogue(),
         "/api/data": lambda q: project.explorer.page(q["dataset"][0], q),
     }
@@ -78,8 +92,8 @@ def make_application(project: ProjectData):
             extra_headers.append(("Allow", "GET, HEAD"))
         else:
             path_name = environ.get("PATH_INFO", "/")
-            # Charts (reports/figures) and the downloadable report / slides (docs/)
-            file_dirs = {"/figures/": (FIGURES_DIR, None), "/downloads/": (DOCS_DIR, DOWNLOADS)}
+            # Charts (reports/figures), club crests and the downloadable report / slides (docs/)
+            file_dirs = {"/figures/": (FIGURES_DIR, None), "/logos/": (logos.LOGO_DIR, None), "/downloads/": (DOCS_DIR, DOWNLOADS)}
             prefix = next((p_ for p_ in file_dirs if path_name.startswith(p_)), None)
             if prefix:
                 folder, allowed = file_dirs[prefix]

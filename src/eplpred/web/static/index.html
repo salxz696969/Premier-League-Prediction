@@ -17,10 +17,12 @@
       <nav class="segmented" aria-label="Sections">
         <span class="segmented-thumb" aria-hidden="true"></span>
         <a href="#predict" data-view="predict">Predict</a>
+        <a href="#matches" data-view="matches">Matches</a>
+        <a href="#players" data-view="players">Players</a>
         <a href="#teams" data-view="teams">Teams</a>
         <a href="#models" data-view="models">Models</a>
         <a href="#evaluation" data-view="evaluation">Evaluation</a>
-        <a href="#seasons" data-view="seasons">Seasons</a>
+
         <a href="#data" data-view="data">Data</a>
         <a href="#report" data-view="report">Report</a>
         <a href="#slides" data-view="slides">Slides</a>
@@ -41,6 +43,7 @@
       <div class="card fixture">
         <label class="team-pick">
           <span class="team-pick-label">Home</span>
+          <span class="pick-crest" id="home-crest" aria-hidden="true"></span>
           <select id="home-team" aria-label="Home team"></select>
         </label>
         <button class="swap" id="swap" type="button" aria-label="Swap home and away">
@@ -48,6 +51,7 @@
         </button>
         <label class="team-pick away">
           <span class="team-pick-label">Away</span>
+          <span class="pick-crest" id="away-crest" aria-hidden="true"></span>
           <select id="away-team" aria-label="Away team"></select>
         </label>
       </div>
@@ -271,28 +275,69 @@
       </div>
     </section>
 
-    <!-- ============================== SEASONS ============================== -->
-    <section class="view" id="view-seasons" data-view="seasons" hidden>
-      <div class="hero">
-        <p class="eyebrow">26 seasons</p>
-        <h1 class="display">Season explorer</h1>
-        <p class="lede">Final tables for every season, and for 2014-15 onwards every prediction the model made before kick-off.</p>
+    <!-- ============================== MATCHES ============================== -->
+    <section class="view" id="view-matches" data-view="matches" hidden>
+      <div class="hero compact">
+        <p class="eyebrow">Match centre</p>
+        <h1 class="display">Matches</h1>
+        <p class="lede">Every Premier League match since 2000-01, plus the cup and European matches of Premier League clubs. Tap a match for stats, line-ups and what the model predicted.</p>
       </div>
-      <div class="card toolbar-card">
-        <label class="inline-pick">Season <select id="season-pick" aria-label="Season"></select></label>
-        <label class="inline-pick" id="team-filter-wrap">Team <select id="team-filter" aria-label="Filter matches by team"></select></label>
+      <div class="mc-toolbar">
+        <select id="mc-season" aria-label="Season"></select>
+        <div class="chips comp-chips" id="mc-comps" role="group" aria-label="Competition"></div>
+        <div class="segmented small" id="mc-view" role="group" aria-label="View">
+          <span class="segmented-thumb" aria-hidden="true"></span>
+          <button type="button" data-v="fixtures" aria-pressed="true">Matches</button>
+          <button type="button" data-v="table">Table</button>
+        </div>
       </div>
-      <div class="tiles" id="season-tiles"></div>
-      <div class="grid-2 wide-right">
-        <div class="card">
-          <div class="card-head"><h2>Final table</h2></div>
-          <div class="table-wrap"><table class="table" id="league-table"></table></div>
+      <div id="mc-fixtures">
+        <div class="round-nav">
+          <button type="button" class="round-arrow" id="mc-prev" aria-label="Previous round">‹</button>
+          <select id="mc-round" aria-label="Round"></select>
+          <button type="button" class="round-arrow" id="mc-next" aria-label="Next round">›</button>
         </div>
-        <div class="card">
-          <div class="card-head"><h2>Predictions</h2><p class="muted" id="matches-note"></p></div>
-          <ul class="matches" id="match-list"></ul>
-          <button type="button" class="button secondary" id="show-more" hidden>Show more</button>
+        <div class="match-list" id="mc-list"></div>
+      </div>
+      <div id="mc-table" hidden>
+        <div class="card league-card">
+          <div class="table-wrap"><table class="league" id="mc-league"></table></div>
+          <div class="legend zones"><span><i style="background:var(--home)"></i>Champions League places</span><span><i style="background:var(--away)"></i>Relegation</span><span class="muted">Form: last 5 league matches, newest on the right</span></div>
         </div>
+      </div>
+    </section>
+
+    <!-- ============================== PLAYERS ============================== -->
+    <section class="view" id="view-players" data-view="players" hidden>
+      <div class="hero compact">
+        <p class="eyebrow">Fantasy Premier League data</p>
+        <h1 class="display">Players</h1>
+        <p class="lede">Every Premier League player since 2016-17: goals, assists, minutes, FPL points and how influential they were.</p>
+      </div>
+      <div class="card pl-toolbar">
+        <label class="search">
+          <svg viewBox="0 0 20 20" width="16" height="16" aria-hidden="true"><circle cx="8.5" cy="8.5" r="5.5" fill="none" stroke="currentColor" stroke-width="2"/><path d="M13 13l4 4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+          <input type="search" id="pl-search" placeholder="Search players" aria-label="Search players">
+        </label>
+        <select id="pl-season" aria-label="Season"></select>
+        <select id="pl-team" aria-label="Team"></select>
+        <select id="pl-sort" aria-label="Sort by">
+          <option value="points">Most FPL points</option><option value="goals">Most goals</option><option value="assists">Most assists</option>
+          <option value="minutes">Most minutes</option><option value="influence">Influence per 90</option><option value="clean_sheets">Clean sheets</option><option value="price">Price</option>
+        </select>
+        <div class="chips" id="pl-pos" role="group" aria-label="Position">
+          <button type="button" class="chip" data-pos="" aria-pressed="true">All</button>
+          <button type="button" class="chip" data-pos="GK" aria-pressed="false">Goalkeepers</button>
+          <button type="button" class="chip" data-pos="DEF" aria-pressed="false">Defenders</button>
+          <button type="button" class="chip" data-pos="MID" aria-pressed="false">Midfielders</button>
+          <button type="button" class="chip" data-pos="FWD" aria-pressed="false">Forwards</button>
+        </div>
+      </div>
+      <div class="card pl-card">
+        <div class="pl-head"><span></span><span>Player</span><span class="num"><abbr title="Appearances">Apps</abbr></span><span class="num"><abbr title="Goals">G<span class="hide-s">oals</span></abbr></span><span class="num"><abbr title="Assists">A<span class="hide-s">ssists</span></abbr></span><span class="num hide-s">Minutes</span><span class="num hide-s">Infl/90</span><span class="num"><abbr title="FPL points">P<span class="hide-s">oin</span>ts</abbr></span></div>
+        <div class="pl-list" id="pl-list"></div>
+        <p class="muted pl-count" id="pl-count"></p>
+        <button type="button" class="button secondary" id="pl-more" hidden>Show more</button>
       </div>
     </section>
 
@@ -414,6 +459,15 @@
     </section>
   </main>
 
+  <div class="sheet-backdrop" id="sheet-backdrop" hidden></div>
+  <aside class="sheet" id="sheet" role="dialog" aria-modal="true" aria-label="Details" hidden>
+    <div class="sheet-bar" id="sheet-bar">
+      <button type="button" class="sheet-btn" id="sheet-back" hidden>‹ Back</button>
+      <span class="sheet-grabber" aria-hidden="true"></span>
+      <button type="button" class="sheet-btn close" id="sheet-close" aria-label="Close">✕</button>
+    </div>
+    <div class="sheet-body" id="sheet-body"></div>
+  </aside>
   <div class="tooltip" id="tooltip" role="tooltip" hidden></div>
   <div class="toast" id="toast" role="status" hidden></div>
   <script src="app.js"></script>

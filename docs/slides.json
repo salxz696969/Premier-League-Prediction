@@ -661,6 +661,31 @@
  },
  {
   "kind": "cards",
+  "kicker": "Website",
+  "title": "Everything can be checked on our website",
+  "cards": [
+   {
+    "title": "Predict",
+    "text": "Any fixture, with every step of the calculation shown"
+   },
+   {
+    "title": "Matches",
+    "text": "Every league, cup and European match: stats, line-ups, our prediction"
+   },
+   {
+    "title": "Players and teams",
+    "text": "Season stats, form, Elo and top players for every club"
+   },
+   {
+    "title": "Data and evaluation",
+    "text": "Every row of every source, and every accuracy measure"
+   }
+  ],
+  "notes": "Everything in this presentation can be checked on our website. The Predict page shows the calculation for any fixture. The Matches page works like a football app: every Premier League, cup and European match with its statistics, the line-ups on a pitch and what our model predicted before kick-off. There are pages for players and teams, all the raw data row by row, and the full evaluation.",
+  "number": 16
+ },
+ {
+  "kind": "cards",
   "kicker": "Limitations",
   "title": "What could be better",
   "cards": [
@@ -682,7 +707,7 @@
    }
   ],
   "notes": "Our model does not know about injuries or the confirmed line-up, which is the biggest reason the bookmaker is still slightly better. Draws stay very hard. Some data is missing from free sources. Next we would add expected-goals data and simulate whole seasons to predict the final table.",
-  "number": 16
+  "number": 17
  },
  {
   "kind": "closing",
@@ -694,7 +719,7 @@
    "Testing properly matters more than a fancy model"
   ],
   "notes": "To conclude: with real data and a fair test, our model predicts Premier League results about as well as we could expect, within about one percentage point of a professional bookmaker. Team strength is the most important information, and a simple model beat the complex ones. Most of all, we learned that testing honestly matters more than using a fancy model. Thank you, we are happy to take questions, and we can show the live website.",
-  "number": 17
+  "number": 18
  },
  {
   "kind": "sources",
@@ -710,6 +735,6 @@
    "Hvattum & Arntzen (2010) · Constantinou & Fenton (2012)"
   ],
   "notes": "All sources and references are listed here and in SOURCES.md, with full citations.",
-  "number": 18
+  "number": 19
  }
 ]

@@ -141,3 +141,44 @@ def test_figures_and_downloads_are_served_safely(base_url):
         with pytest.raises(urllib.error.HTTPError) as err:
             get(base_url + bad_path)
         assert err.value.code == 404
+
+
+def test_football_pages(project):
+    f = project.football
+    assert "premier_league" in [c["key"] for c in f.competitions("2019-20")]
+    week = f.matches("2015-16", "premier_league")
+    assert len(week["rounds"]) >= 38 and week["matches"]
+    table = f.table("2015-16")["table"]
+    assert table[0]["team"]["name"] == "Leicester City" and table[0]["points"] == 81
+    assert all(len(r["form"]) == 5 for r in table)
+    match = f.match(week["matches"][0]["id"])
+    assert {s["label"] for s in match["stats"]} >= {"Shots", "Corners"}
+    team = f.team("Leicester City", "2015-16")
+    assert team["row"]["position"] == 1 and team["results"]
+    cups = f.matches("2019-20", "fa_cup")
+    assert cups["matches"] and all(m["id"] is None for m in cups["matches"])
+
+
+def test_line_ups_and_players_come_from_fpl(project):
+    f = project.football
+    week = f.matches("2023-24", "premier_league")
+    match = f.match(week["matches"][0]["id"])
+    for side in ("home", "away"):
+        assert sum(len(line) for line in match["lineups"][side]["lines"]) == 11
+    players = f.player_list("2023-24", sort="goals")
+    top = players["players"][0]
+    assert top["goals"] >= 20  # Haaland scored 27 in 2023-24
+    assert f.player(top["key"])["career"]["goals"] >= top["goals"]
+
+
+def test_club_crests_are_served(base_url, project):
+    from eplpred.web.football import badge
+    assert badge("Arsenal")["logo"] == "/logos/arsenal-fc.png"
+    assert badge("Bolton Wanderers")["logo"] is None  # falls back to the coloured badge
+    status, body = get(base_url + "/logos/arsenal-fc.png")
+    assert status == 200 and body[:4] == b"\x89PNG"
+    with pytest.raises(urllib.error.HTTPError):
+        get(base_url + "/logos/..%2F..%2Fpyproject.toml")
+    for path in ["/api/football/overview", "/api/football/matches?season=2019-20&competition=premier_league",
+                 "/api/football/table?season=2019-20", "/api/football/players?season=2019-20"]:
+        assert get(base_url + path)[0] == 200, path

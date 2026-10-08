@@ -16,6 +16,7 @@ from ..elo import compute_elo
 from ..evaluation import BOOKMAKER
 from ..predict import Predictor, explain_prediction
 from .data_explorer import DataExplorer
+from .football import badge
 
 BASELINE = "Baseline: home-win rate"
 
@@ -39,6 +40,7 @@ class ProjectData:
         self.extended_predictions = pd.read_csv(ext_preds, parse_dates=["date"]) if ext_preds.exists() else None
         self._evaluation = None
         self.explorer = DataExplorer()
+        self._football = None
         candidates = self.overall[~self.overall["model"].isin([BOOKMAKER, BASELINE])]
         self.best_model = candidates.sort_values("rps").iloc[0]["model"]
         self._predict = lru_cache(maxsize=512)(self._predict_uncached)
@@ -65,6 +67,7 @@ class ProjectData:
             "n_features": len(features.feature_columns()),
             "teams_now": self.predictor.teams,
             "default_fixture": list(self.default_fixture()),
+            "badges": {t: badge(t) for t in pd.concat([m["home_team"], m["away_team"]]).unique()},
         }
 
     # ------------------------------------------------------------------
@@ -123,6 +126,14 @@ class ProjectData:
 
     def predict(self, home: str, away: str) -> dict:
         return self._predict(home, away)
+
+    @property
+    def football(self):
+        if self._football is None:
+            from .football import Football
+
+            self._football = Football(self)
+        return self._football
 
     def story(self) -> dict:
         """Report (as HTML) and slides, built from the current results."""

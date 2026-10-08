@@ -309,6 +309,17 @@ def build_slides(n: dict) -> list[dict]:
          "notes": "Our first version used one season, some generated data and leaked future information, and it was "
                   f"tested on only 38 matches. On those same 38 matches, version 2 scores much higher, but even always "
                   f"picking the home team scores well, which shows 38 matches is too few to judge a model."},
+        {"kind": "cards", "kicker": "Website", "title": "Everything can be checked on our website",
+         "cards": [
+             {"title": "Predict", "text": "Any fixture, with every step of the calculation shown"},
+             {"title": "Matches", "text": "Every league, cup and European match: stats, line-ups, our prediction"},
+             {"title": "Players and teams", "text": "Season stats, form, Elo and top players for every club"},
+             {"title": "Data and evaluation", "text": "Every row of every source, and every accuracy measure"},
+         ],
+         "notes": "Everything in this presentation can be checked on our website. The Predict page shows the calculation "
+                  "for any fixture. The Matches page works like a football app: every Premier League, cup and European "
+                  "match with its statistics, the line-ups on a pitch and what our model predicted before kick-off. "
+                  "There are pages for players and teams, all the raw data row by row, and the full evaluation."},
         {"kind": "cards", "kicker": "Limitations", "title": "What could be better",
          "cards": [
              {"title": "Team news", "text": "Injuries and confirmed line-ups: the main reason bookmakers are better"},
@@ -564,6 +575,15 @@ With real data and an honest test, our best model predicts {pct(n['best_acc'])} 
 - Hvattum, L. M., & Arntzen, H. (2010). Using ELO ratings for match result prediction in association football. *International Journal of Forecasting*, 26(3), 460–470.
 - Constantinou, A. C., & Fenton, N. E. (2012). Solving the problem of inadequate scoring rules for assessing probabilistic football forecast models. *JQAS*, 8(1).
 - Pedregosa, F. et al. (2011). Scikit-learn: Machine learning in Python. *JMLR*, 12, 2825–2830.
+
+## Appendix: the website
+
+The project includes a website (`uv run python app.py`) so that every number in this report can be checked:
+
+- **Predict**: any fixture, with each step of the calculation in section 4 shown with the model's real values.
+- **Matches**: every Premier League match since {n['first_season']} and every FA Cup, League Cup, Champions League and Europa League match of Premier League clubs in the data, by round, like a football app. Each league match opens a match centre with the statistics, both line-ups on a pitch (from Fantasy Premier League data, 2016-17 onwards), the form and Elo ratings before kick-off, the head-to-head record and, for the test seasons, what our model predicted. The league table of every season is there too.
+- **Players** and **teams**: season statistics of every Premier League player since 2016-17 and every club's results, form and Elo rating. Club crests come from github.com/luukhopman/football-logos.
+- **Models**, **Evaluation** and **Data**: all results of section 6 and every row of every dataset.
 """
 
 

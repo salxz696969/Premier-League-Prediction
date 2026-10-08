@@ -10,7 +10,7 @@ This is version 2 of [premier-league-prediction-2019-2020](https://github.com/sa
 * **A professional benchmark**: our models are compared with bookmaker odds
 * **Extra data, tested properly**: every cup, European and international-break date (fatigue) and Fantasy Premier League player influence, each checked on whether it really improves predictions
 * **Sources for everything**, listed in [`SOURCES.md`](SOURCES.md)
-* **A web app to show it all**: predictor, team ratings, model results and a season explorer
+* **A web app to show it all**: predictor, a football-app style match centre (every match, stats, line-ups on a pitch, league tables, club crests), players, team ratings, model results, all data, the report and the slides
 
 ---
 
@@ -21,7 +21,7 @@ uv sync
 uv run python app.py          # opens http://127.0.0.1:8000 in your browser
 ```
 
-It runs on your own computer and needs no internet connection, so it's safe for a live demo. It has five sections:
+It runs on your own computer and needs no internet connection, so it's safe for a live demo. Its sections:
 
 | Section | What it shows |
 |---|---|
@@ -29,11 +29,14 @@ It runs on your own computer and needs no internet connection, so it's safe for 
 | **Teams** | Current Elo ranking, plus Elo history since 2000 for up to 4 teams |
 | **Models** | Every model vs the bookmaker and the baseline, season-by-season accuracy, whether extra data helps, feature importance, version 1 vs version 2 |
 | **Evaluation** | Accuracy (with 95% range), precision, recall, F1, confusion matrix, log loss, Brier, RPS, AUC, calibration, a worked example on real matches, and the walk-forward test diagram |
-| **Seasons** | Final table of any season; for 2014-15 onwards every pre-match prediction with ✓/✗ |
+| **Matches** | Like a football app (SofaScore / FotMob style): every Premier League match by matchweek, plus FA Cup, League Cup, Champions League and Europa League rounds; the league table of any season. Tap a match for the match centre: stats, both line-ups on a pitch with FPL points, form and Elo before kick-off, head-to-head and the model's prediction (✓/✗) |
+| **Players** | Every Premier League player since 2016-17: search, filter by season, team and position, sort by points, goals, assists, minutes or influence. Tap a player (or a team anywhere on the site) for their page |
 | **Data** | Every dataset (raw and derived) row by row, with source and licence: search, filter, sort, choose columns, download CSV |
 | **Report** | The written report for the lecturer (print or save as PDF, or download Markdown) |
 | **Slides** | The presentation with speaker notes; full-screen presenting; download as PowerPoint |
 | **About** | The method in four steps, plus sources |
+
+Club crests come from [luukhopman/football-logos](https://github.com/luukhopman/football-logos) (every club in the Premier League since 2021-22 and most European opponents); older clubs such as Bolton or Wigan get a badge in their club colours.
 
 **Report and slides are generated from the current results** (`src/eplpred/story.py`), so they always match the numbers on the site. After changing data or models, run `uv run python scripts/06_make_report.py` (part of `run_all.py`) to refresh `docs/REPORT.md` and `docs/slides.pptx`; building the PowerPoint needs Node.js (`npm install` once).
 

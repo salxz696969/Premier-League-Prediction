@@ -138,11 +138,21 @@ _DATE2 = re.compile(r"^\s*(?:Mon|Tue|Wed|Thu|Fri|Sat|Sun) ([A-Z][a-z]{2}) ([0-9]
 _MONTHS = {m: i for i, m in enumerate(["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"], 1)}
 
 
-def parse_openfootball(text: str, start_year: int) -> list[tuple[pd.Timestamp, str, str]]:
-    """Return (date, home, away) for every match line in a football.txt file."""
+_SCORE = re.compile(r"(?:(\d+)-(\d+) pen\.\s+)?(\d+)-(\d+)(\s+a\.e\.t\.)?")
+
+
+def parse_openfootball_full(text: str, start_year: int) -> list[dict]:
+    """Every match line of a football.txt file: date, round, teams and score.
+
+    Score formats: "2-1 (1-0)", "4-1 a.e.t. (3-1, 1-0)" (after extra time),
+    "4-3 pen. 1-0 a.e.t." (1-0 after extra time, 4-3 on penalties).
+    """
     games = []
-    date = None
+    date, round_name = None, ""
     for line in text.splitlines():
+        if line.startswith("▪"):
+            round_name = line.lstrip("▪ ").strip()
+            continue
         m = _DATE2.match(line)
         if m:
             month, day, year = _MONTHS[m.group(1)], int(m.group(2)), m.group(3)
@@ -152,10 +162,80 @@ def parse_openfootball(text: str, start_year: int) -> list[tuple[pd.Timestamp, s
         if date is None or " v " not in line:
             continue
         body = re.sub(r"^\s*\d{1,2}[.:]\d{2}\s+", "", line).strip()
-        home, away = body.split(" v ", 1)
-        away = re.split(r"\s{2,}|\s+\d+-\d+|\s+@", away.strip())[0]
-        games.append((date, home.strip(), away.strip()))
+        home, rest = body.split(" v ", 1)
+        parts = re.split(r"\s{2,}", rest.strip(), maxsplit=1)
+        away = re.split(r"\s+\d+-\d+|\s+@", parts[0])[0].strip()
+        tail = rest[len(away):].strip() if len(parts) == 1 else parts[1]
+        score = _SCORE.match(tail.strip()) if tail else None
+        games.append({
+            "date": date, "round": round_name, "home": home.strip(), "away": away,
+            "home_goals": int(score.group(3)) if score else None,
+            "away_goals": int(score.group(4)) if score else None,
+            "extra_time": bool(score and score.group(5)),
+            "penalties": f"{score.group(1)}-{score.group(2)}" if score and score.group(1) else "",
+        })
     return games
+
+
+def parse_openfootball(text: str, start_year: int) -> list[tuple[pd.Timestamp, str, str]]:
+    """Return (date, home, away) for every match line in a football.txt file."""
+    return [(g["date"], g["home"], g["away"]) for g in parse_openfootball_full(text, start_year)]
+
+
+def display_club(name: str) -> str:
+    """'Bayern München (GER)' -> 'Bayern München'."""
+    return re.sub(r"\s*\([A-Z]{3}\)", "", str(name)).strip()
+
+
+def load_cup_matches(matches: pd.DataFrame) -> pd.DataFrame:
+    """Full cup and European matches (round, both teams, score) involving
+    a Premier League club of that season. Used by the match centre."""
+    rows = []
+    for year in range(config.FIRST_SEASON, config.LAST_SEASON + 1):
+        season = matches[matches["season"] == year]
+        pl = {clean_name(t): t for t in set(season["home_team"]) | set(season["away_team"])}
+        start, end = pd.Timestamp(f"{year}-07-01"), pd.Timestamp(f"{year + 1}-06-30")
+        games = []
+        for name, comp, use in [("facup", "fa_cup", year <= 2017), ("leaguecup", "league_cup", year <= 2017),
+                                ("champs", "champions_league", year <= 2010)]:
+            if not use:
+                continue
+            df = _engsoccer(name)
+            df = df[df["Season"] == year]
+            for r in df.itertuples(index=False):
+                hg, ag = (r.hgoal, r.vgoal) if hasattr(r, "hgoal") else (None, None)
+                if hg is None or pd.isna(hg):
+                    ft = str(getattr(r, "FT", ""))
+                    hg, ag = (int(ft.split("-")[0]), int(ft.split("-")[1])) if "-" in ft else (None, None)
+                aet = str(getattr(r, "aet", "")).lower() in ("yes", "true", "1")
+                pens = getattr(r, "pens", "")
+                games.append((comp, {"date": pd.Timestamp(r.Date), "round": str(r.round),
+                                     "home": r.home, "away": r.visitor, "home_goals": hg, "away_goals": ag,
+                                     "extra_time": aet, "penalties": "" if pd.isna(pens) else str(pens)}))
+        for file, comp in [("cl", "champions_league"), ("el", "europa_league"), ("facup", "fa_cup"), ("eflcup", "league_cup")]:
+            if (comp == "champions_league" and year <= 2010) or (comp in ("fa_cup", "league_cup") and year <= 2017):
+                continue
+            path = RAW / "openfootball" / season_label(year) / f"{file}.txt"
+            if path.exists():
+                games += [(comp, g) for g in parse_openfootball_full(path.read_text(encoding="utf-8"), year)]
+        for comp, g in games:
+            if not (start <= g["date"] <= end):
+                continue
+            home_pl, away_pl = to_premier_league_name(g["home"], pl), to_premier_league_name(g["away"], pl)
+            home_pl = home_pl if home_pl in pl.values() else None
+            away_pl = away_pl if away_pl in pl.values() else None
+            if not (home_pl or away_pl):
+                continue
+            rows.append({
+                "season": year, "season_label": season_label(year), "competition": comp,
+                "competition_name": COMPETITIONS[comp], "round": g["round"], "date": g["date"],
+                "home_team": home_pl or display_club(g["home"]), "away_team": away_pl or display_club(g["away"]),
+                "home_is_pl": bool(home_pl), "away_is_pl": bool(away_pl),
+                "home_goals": g["home_goals"], "away_goals": g["away_goals"],
+                "extra_time": g["extra_time"], "penalties": g["penalties"],
+            })
+    out = pd.DataFrame(rows).drop_duplicates(["date", "competition", "home_team", "away_team"])
+    return out.sort_values(["date", "competition"]).reset_index(drop=True)
 
 
 def load_other_matches(matches: pd.DataFrame) -> pd.DataFrame:

@@ -1,0 +1,866 @@
+id,first_name,second_name,web_name,element_type
+1,Folarin,Balogun,Balogun,4
+2,Cédric,Alves Soares,Cédric,2
+3,Mohamed,Elneny,M.Elneny,3
+4,Fábio,Ferreira Vieira,Fábio Vieira,3
+5,Gabriel,dos Santos Magalhães,Gabriel,2
+6,Kai,Havertz,Havertz,3
+8,Gabriel,Fernando de Jesus,G.Jesus,4
+9,Jorge Luiz,Frello Filho,Jorginho,3
+10,Jakub,Kiwior,Kiwior,2
+11,Marcus,Oliveira Alencar,Marquinhos,3
+12,Gabriel,Martinelli Silva,Martinelli,3
+13,Eddie,Nketiah,Nketiah,4
+14,Martin,Ødegaard,Ødegaard,3
+15,Thomas,Partey,Thomas,3
+16,Nicolas,Pépé,Pepe,3
+17,Aaron,Ramsdale,Ramsdale,1
+18,Rúnar Alex,Rúnarsson,Rúnarsson,1
+19,Bukayo,Saka,Saka,3
+20,William,Saliba,Saliba,2
+22,Emile,Smith Rowe,Smith Rowe,3
+24,Kieran,Tierney,Tierney,2
+25,Takehiro,Tomiyasu,Tomiyasu,2
+26,Leandro,Trossard,Trossard,3
+29,Benjamin,White,White,2
+30,Granit,Xhaka,Xhaka,3
+31,Oleksandr,Zinchenko,Zinchenko,2
+113,David,Raya Martin,Raya,1
+540,Declan,Rice,Rice,3
+578,Reiss,Nelson,Nelson,3
+585,Jurriën,Timber,J.Timber,2
+646,Karl,Hein,Hein,1
+735,Charles,Sagoe,Sagoe,3
+736,Reuell,Walters,Walters,2
+737,Bradley,Ibrahim,Ibrahim,3
+764,Myles,Lewis-Skelly,Lewis-Skelly,3
+772,Ethan,Nwaneri,Nwaneri,3
+815,Mauro,Bandeira,Bandeira,3
+817,James,Sweet,Sweet,2
+32,Alexandre,Moreno Lopera,Alex Moreno,2
+34,Leon,Bailey,Bailey,3
+35,Emiliano,Buendía Stati,Buendia,3
+36,Matty,Cash,Cash,2
+37,Calum,Chambers,Chambers,2
+38,Philippe,Coutinho Correia,Coutinho,3
+39,Keinan,Davis,Davis,4
+40,Leander,Dendoncker,Dendoncker,3
+41,Diego Carlos,Santos Silva,Diego Carlos,2
+42,Lucas,Digne,Digne,2
+43,Douglas Luiz,Soares de Paulo,Douglas Luiz,3
+44,Jhon,Durán,Duran,4
+45,Kortney,Hause,Hause,2
+46,Tim,Iroegbunam,Iroegbunam,3
+47,Boubacar,Kamara,Kamara,3
+48,Ezri,Konsa Ngoyo,Konsa,2
+49,Emiliano,Martínez Romero,Martinez,1
+50,John,McGinn,McGinn,3
+51,Tyrone,Mings,Mings,2
+53,Robin,Olsen,Olsen,1
+54,Jaden,Philogene-Bidace,Philogene,3
+55,Jacob,Ramsey,J.Ramsey,3
+56,Morgan,Sanson,Sanson,3
+57,Viljami,Sinisalo,Sinisalo,1
+58,Youri,Tielemans,Tielemans,3
+59,Bertrand,Traoré,Bertrand Traoré,3
+60,Ollie,Watkins,Watkins,4
+61,Wesley,Moraes Ferreira da Silva,Wesley,4
+584,Pau,Torres,Pau,2
+599,Moussa,Diaby,Diaby,3
+618,Omari,Kellyman,Kellyman,3
+670,Filip,Marschall,Marschall,1
+672,Nicolò,Zaniolo,Zaniolo,3
+686,Oliwier,Zych,Zych,1
+699,Clément,Lenglet,Lenglet,2
+765,Sam,Proctor,Proctor,1
+767,Tommi,O'Reilly,O'Reilly,3
+778,James,Wright,Wright,1
+793,Kaine,Kesler-Hayden,Kesler-Hayden,2
+803,Morgan,Rogers,Rogers,3
+818,Joe,Gauci,Gauci,1
+854,Finley,Munroe,Munroe,2
+865,Kadan,Young,Young,3
+866,Lander,Emery,Emery,1
+62,Jaidon,Anthony,Anthony,3
+63,Philip,Billing,Billing,3
+64,David,Brooks,Brooks,3
+65,Ryan,Christie,Christie,3
+66,Lewis,Cook,L.Cook,3
+67,Siriki,Dembélé,Siriki,3
+68,Ryan,Fredericks,Fredericks,2
+69,James,Hill,Hill,2
+70,Lloyd,Kelly,Kelly,2
+71,Gavin,Kilkenny,Kilkenny,3
+72,Justin,Kluivert,Kluivert,3
+73,Jamal,Lowe,Lowe,3
+74,Emiliano,Marcondes,Marcondes,3
+75,Chris,Mepham,Mepham,2
+76,Kieffer,Moore,Moore,4
+77,Norberto,Murara Neto,Neto,1
+78,Dango,Ouattara,O.Dango,3
+79,Ben,Pearson,Pearson,3
+80,Darren,Randolph,Randolph,1
+81,Joe,Rothwell,Rothwell,3
+82,Antoine,Semenyo,Semenyo,4
+83,Marcos,Senesi,Senesi,2
+84,Adam,Smith,Smith,2
+85,Dominic,Solanke,Solanke,4
+86,Marcus,Tavernier,Tavernier,3
+87,Hamed,Traorè,Hamed Traorè,3
+88,Mark,Travers,Travers,1
+89,Illia,Zabarnyi,Zabarnyi,2
+595,Milos,Kerkez,Kerkez,2
+607,Ionuț,Radu,Radu,1
+619,Ben,Greenwood,Greenwood,2
+643,Max,Aarons,Aarons,2
+644,Alex,Scott,Scott,3
+673,Tyler,Adams,Adams,3
+705,Luis,Sinisterra,Sinisterra,3
+799,Romain,Faivre,Faivre,3
+802,Max,Kinsey,Kinsey,2
+804,Enes,Ünal,Enes Ünal,4
+811,Dominic,Sadi,Sadi,3
+849,Michael,Dacosta Gonzalez,Dacosta Gonzalez,3
+855,Callan,McKenna,McKenna,1
+90,Kristoffer,Ajer,Ajer,2
+91,Ellery,Balcombe,Balcombe,1
+92,Shandon,Baptiste,Baptiste,3
+93,Mads,Bech Sørensen,Bech,2
+94,Mads,Bidstrup,Bidstrup,3
+95,Sergi,Canós Tenés,Canós,3
+96,Nathan,Collins,Collins,2
+97,Matthew,Cox,Cox,1
+98,Mikkel,Damsgaard,Damsgaard,3
+99,Josh,Dasilva,Dasilva,3
+100,Halil,Dervişoğlu,Dervişoğlu,4
+101,Mark,Flekken,Flekken,1
+102,Charlie,Goode,Goode,2
+103,Rico,Henry,Henry,2
+104,Aaron,Hickey,Hickey,2
+105,Vitaly,Janelt,Janelt,3
+106,Mathias,Jensen,Jensen,3
+107,Keane,Lewis-Potter,Lewis-Potter,3
+108,Bryan,Mbeumo,Mbeumo,3
+109,Ben,Mee,Mee,2
+110,Christian,Nørgaard,Nørgaard,3
+111,Frank,Onyeka,Onyeka,3
+112,Ethan,Pinnock,Pinnock,2
+114,Mads,Roerslev Rasmussen,Roerslev,2
+115,Kevin,Schade,Schade,3
+116,Thomas,Strakosha,Strakosha,1
+117,Ivan,Toney,Toney,4
+118,Ryan,Trevitt,Trevitt,3
+119,Yoane,Wissa,Wissa,4
+120,Yegor,Yarmoliuk,Yarmoliuk,3
+121,Mathias,Jorgensen,Zanka,2
+258,Neal,Maupay,Maupay,4
+508,Sergio,Reguilón,Reguilón,2
+620,Michael,Olakigbe,Olakigbe,3
+684,Ethan,Brierley,Brierley,3
+701,Saman,Ghoddos,Ghoddos,3
+725,Ji-Soo,Kim,Kim Ji-Soo,2
+733,Valintino,Adedokun,Adedokun,2
+744,Myles,Peart-Harris,Peart-Harris,3
+752,Vincent,Angelini,Angelini,1
+789,Hákon,Valdimarsson,Valdimarsson,1
+797,Benjamin,Fredrick,Fredrick,2
+834,Benjamin,Arthur,Arthur,2
+864,Yunus,Konak,Konak,3
+122,Simon,Adingra,Adingra,3
+123,Steven,Alzate,Alzate,3
+124,Yasin,Ayari,Ayari,3
+125,Facundo,Buonanotte,Buonanotte,3
+127,Aaron,Connolly,Connolly,4
+128,Mahmoud,Dahoud,Dahoud,3
+129,Lewis,Dunk,Dunk,2
+130,Julio,Enciso,Enciso,3
+131,Pervis,Estupiñán,Estupiñan,2
+132,Evan,Ferguson,Ferguson,4
+133,Billy,Gilmour,Gilmour,3
+134,Pascal,Groß,Gross,3
+135,João Pedro,Junqueira de Jesus,João Pedro,4
+136,Michał,Karbownik,Karbownik,2
+137,Kacper,Kozłowski,Kozłowski,3
+138,Adam,Lallana,Lallana,3
+139,Tariq,Lamptey,Lamptey,2
+140,Solly,March,March,3
+141,Tom,McGill,McGill,1
+142,James,Milner,Milner,3
+143,Kaoru,Mitoma,Mitoma,3
+144,Jakub,Moder,Moder,3
+146,Jeremy,Sarmiento Morante,Sarmiento,3
+147,Kjell,Scherpen,Scherpen,1
+148,Jason,Steele,Steele,1
+149,Deniz,Undav,Undav,4
+150,Jan Paul,van Hecke,Van Hecke,2
+151,Joël,Veltman,Veltman,2
+152,Bart,Verbruggen,Verbruggen,1
+153,Adam,Webster,Webster,2
+154,Danny,Welbeck,Welbeck,4
+155,Andi,Zeqiri,Zeqiri,4
+606,Igor Julio,dos Santos de Paulo,Igor,2
+621,Jack,Hinshelwood,Hinshelwood,3
+690,Carlos,Baleba,Baleba,3
+700,Anssumane,Fati Vieira,Ansu Fati,3
+741,Mark,O’Mahony,O’Mahony,4
+742,Benicio,Baker-Boaitey,Baker-Boaitey,3
+746,Ben,Jackson,Jackson,2
+747,Joshua,Duffus,Duffus,3
+753,Leigh,Kavanagh,Kavanagh,2
+755,Luca,Barrington,Barrington,3
+786,Cameron,Peupion,Peupion,3
+816,Valentín,Barco,Barco,2
+843,Samy,Chouchane,Chouchane,3
+845,Odeluga,Offiah,Offiah,2
+861,Noël,Atom,Atom,2
+156,Enock,Agyei,Agyei,3
+157,Ameen,Al-Dakhil,Al-Dakhil,2
+158,Samuel,Bastien,Bastien,3
+159,Manuel Benson,Hedilazio,Benson,3
+160,Jordan,Beyer,Beyer,2
+161,Josh,Brownhill,Brownhill,3
+162,Darko,Churlinov,Churlinov,3
+163,Jack,Cork,Cork,3
+164,Dara,Costelloe,Costelloe,3
+165,Josh,Cullen,Cullen,3
+166,CJ,Egan-Riley,Egan-Riley,2
+167,Hjalmar,Ekdal,Ekdal,2
+168,Lyle,Foster,Foster,4
+169,Denis,Franchi,Franchi,1
+170,Jóhann Berg,Gudmundsson,Gudmundsson,3
+171,Luke,McNally,McNally,2
+172,Arijanet,Muric,Muric,1
+173,Dara,O'Shea,O'Shea,2
+174,Michael,Obafemi,Obafemi,4
+175,Bailey,Peacock-Farrell,Peacock-Farrell,1
+176,Connor,Roberts,Roberts,2
+177,Jay,Rodriguez,Rodriguez,4
+178,Charlie,Taylor,Taylor,2
+179,Bobby,Thomas,Thomas,2
+180,Scott,Twine,Twine,3
+181,Lawrence,Vigouroux,Vigouroux,1
+182,Victor,da Silva,Vitinho,2
+183,Wout,Weghorst,Weghorst,4
+184,Anass,Zaroury,Zaroury,3
+200,David Datro,Fofana,D.D.Fofana,4
+475,Sander,Berge,Berge,3
+594,Zeki,Amdouni,Amdouni,4
+596,James,Trafford,Trafford,1
+600,Nathan,Redmond,Redmond,3
+605,Luca,Koleosho,Koleosho,3
+608,Jacob,Bruun Larsen,Bruun Larsen,3
+622,Owen,Dodgson,Dodgson,2
+660,Wilson,Odobert,Odobert,3
+674,Hannes,Delcroix,Delcroix,2
+675,Aaron,Ramsey,A.Ramsey,3
+694,Han-Noah,Massengo,Massengo,3
+706,Mike,Trésor,M.Trésor,3
+805,Lorenz,Assignon,Assignon,2
+806,Maxime,Esteve,Estève,2
+126,Moisés,Caicedo Corozo,Caicedo,3
+145,Robert,Sánchez,Sanchez,1
+185,Ethan,Ampadu,Ampadu,2
+186,Andrey,Nascimento dos Santos,Andrey,3
+187,Kepa,Arrizabalaga,Arrizabalaga,1
+188,Pierre-Emerick,Aubameyang,Aubameyang,4
+189,César,Azpilicueta,Azpilicueta,2
+190,Abdul Rahman,Baba,Baba,2
+191,Benoît,Badiashile,B.Badiashile,2
+192,Marcus,Bettinelli,Bettinelli,1
+194,Trevoh,Chalobah,Chalobah,2
+195,Ben,Chilwell,Chilwell,2
+196,Carney,Chukwuemeka,Chukwuemeka,3
+197,Levi,Colwill,Colwill,2
+198,Marc,Cucurella Saseta,Cucurella,2
+199,Enzo,Fernández,Enzo,3
+201,Wesley,Fofana,W.Fofana,2
+202,Conor,Gallagher,Gallagher,3
+203,Malo,Gusto,Gusto,2
+206,Reece,James,James,2
+207,Romelu,Lukaku Bolingoli,Lukaku,4
+208,Noni,Madueke,Madueke,3
+210,Mykhailo,Mudryk,Mudryk,3
+211,Nicolas,Jackson,N.Jackson,4
+212,Christopher,Nkunku,Nkunku,4
+213,Christian,Pulisic,Pulisic,3
+214,Malang,Sarr,M.Sarr,2
+215,Gabriel,Słonina,Slonina,1
+216,Raheem,Sterling,Sterling,3
+217,Thiago,Emiliano da Silva,T.Silva,2
+218,Hakim,Ziyech,Ziyech,3
+362,Cole,Palmer,Palmer,3
+589,Ângelo Gabriel,Borges Damaceno,Ângelo,3
+609,Ian,Maatsen,Maatsen,3
+611,Axel,Disasi,Disasi,2
+613,Lesley,Ugochukwu,Ugochukwu,3
+623,Mason,Burstow,Burstow,4
+659,Lucas,Bergström,Bergström,1
+667,Roméo,Lavia,Lavia,3
+671,Bashir,Humphreys,Humphreys,2
+677,Deivid Washington,de Souza Eugênio,Deivid,4
+680,Eddie,Beach,Beach,1
+681,Diego Manuel Jadon,da Silva Moreira,Diego Moreira,3
+687,Đorđe,Petrović,Petrović,1
+716,Alfie,Gilchrist,Gilchrist,2
+717,Ronnie,Stutter,Stutter,4
+718,Alex,Matos,Matos,3
+723,Josh,Brooking,Brooking,2
+758,Leo,Castledine,Castledine,3
+791,Cesare,Casadei,Casadei,3
+819,Ishé,Samuels-Smith,Samuels-Smith,2
+820,Ollie,Harrison,Harrison,3
+830,Jimi,Tauriainen,Tauriainen,3
+838,Josh,Acheampong,Acheampong,2
+847,Teddy,Sharman-Lowe,Sharman-Lowe,1
+851,Tyrique,George,George,4
+852,Kiano,Dyer,Dyer,3
+858,Ted,Curd,Curd,1
+859,Zak,Sturge,Sturge,2
+7,Rob,Holding,Holding,2
+219,Naouirou,Ahamada,Ahamada,3
+220,Joachim,Andersen,Andersen,2
+221,Jordan,Ayew,J.Ayew,3
+222,Nathaniel,Clyne,Clyne,2
+223,Cheick,Doucouré,C.Doucouré,3
+224,Malcolm,Ebiowei,Ebiowei,3
+225,Odsonne,Edouard,Edouard,4
+226,Eberechi,Eze,Eze,3
+227,Vicente,Guaita,Guaita,1
+228,Marc,Guéhi,Guéhi,2
+229,Will,Hughes,Hughes,3
+230,Sam,Johnstone,Johnstone,1
+231,Jefferson,Lerma Solís,Lerma,3
+232,Jean-Philippe,Mateta,Mateta,4
+233,Remi,Matthews,Matthews,1
+234,Tyrick,Mitchell,Mitchell,2
+235,Jake,O'Brien,O'Brien,2
+236,Michael,Olise,Olise,3
+237,Luke,Plange,Plange,4
+238,Chris,Richards,C.Richards,2
+239,Jairo,Riedewald,Riedewald,3
+240,Jeffrey,Schlupp,Schlupp,3
+241,James,Tomkins,Tomkins,2
+242,Joel,Ward,Ward,2
+243,Joe,Whitworth,Whitworth,1
+385,Dean,Henderson,Henderson,1
+615,Matheus,França de Oliveira,Matheus França,3
+657,Jesurun,Rak-Sakyi,Rak-Sakyi,3
+658,John-Kymani,Gordon,Gordon,4
+720,Ademola,Ola-Adebomi,Ola-Adebomi,4
+721,David,Ozoh,Ozoh,3
+724,Jadan,Raymond,Raymond,3
+763,Tayo,Adaramola,Adaramola,2
+792,Daniel,Muñoz,Muñoz,2
+807,Adam,Wharton,Wharton,3
+821,Franco,Umeh-Chibueze,Umeh-Chibueze,4
+825,Kaden,Rodney,Rodney,3
+842,Roshaun,Mathurin,Mathurin,3
+244,André,Tavares Gomes,André Gomes,3
+245,Jarrad,Branthwaite,Branthwaite,2
+246,Dominic,Calvert-Lewin,Calvert-Lewin,4
+247,Seamus,Coleman,Coleman,2
+248,Dele,Alli,Dele,3
+249,Abdoulaye,Doucouré,A.Doucoure,3
+250,James,Garner,Garner,3
+251,Jean-Philippe,Gbamin,Gbamin,3
+252,Ben,Godfrey,Godfrey,2
+253,Demarai,Gray,Gray,3
+254,Idrissa,Gueye,Gana,3
+257,Michael,Keane,Keane,2
+259,Dwight,McNeil,McNeil,3
+260,Vitalii,Mykolenko,Mykolenko,2
+261,Amadou,Onana,Onana,3
+262,Nathan,Patterson,Patterson,2
+263,Jordan,Pickford,Pickford,1
+264,Ellis,Simms,Simms,4
+265,James,Tarkowski,Tarkowski,2
+266,João,Neves Virgínia,J.Virginia,1
+579,Andy,Lonergan,Lonergan,1
+588,Ashley,Young,Young,2
+601,Arnaut,Danjuma Groeneveld,Danjuma,3
+624,Lewis,Dobbin,Dobbin,3
+645,Youssef,Ramalho Chermiti,Y. Chermiti,4
+649,Thomas,Cannon,Cannon,4
+650,Tyler,Onyango,Onyango,3
+661,Jack,Harrison,Harrison,3
+691,Norberto Bercique,Gomes Betuncal,Beto,4
+719,Mackenzie,Hunt,Hunt,3
+760,Jenson,Metcalfe,Metcalfe,3
+761,Elijah,Campbell,Campbell,2
+841,Lewis,Warrington,Warrington,3
+863,Billy,Crellin,Crellin,1
+193,Armando,Broja,Broja,4
+256,Alex,Iwobi,Iwobi,3
+267,Andreas,Hoelgebaum Pereira,Andreas,3
+268,Tom,Cairney,Cairney,3
+269,Ivan,Neves Abreu Cavaleiro,I.Cavaleiro,3
+270,Bobby,De Cordova-Reid,De Cordova-Reid,3
+271,Issa,Diop,Diop,2
+272,Tyrese,Francois,Francois,3
+273,Anthony,Knockaert,Knockaert,3
+274,Terence,Kongolo,Kongolo,2
+275,Bernd,Leno,Leno,1
+276,Saša,Lukić,Lukić,3
+277,Kevin,Mbabu,Mbabu,2
+278,Aleksandar,Mitrović,Mitrović,4
+279,Rodrigo,Muniz Carvalho,Muniz,4
+280,João,Palhinha Gonçalves,J.Palhinha,3
+281,Tim,Ream,Ream,2
+282,Harrison,Reed,Reed,3
+283,Antonee,Robinson,Robinson,2
+284,Marek,Rodák,Rodák,1
+285,Kenny,Tete,Tete,2
+286,Tosin,Adarabioyo,Tosin,2
+287,Carlos Vinícius,Alves Morais,Vinícius,4
+288,Harry,Wilson,Wilson,3
+558,Raúl,Jiménez,Raúl,4
+591,Willian,Borges da Silva,Willian,3
+610,Calvin,Bassey,Bassey,2
+625,Luc,De Fougerolles,De Fougerolles,2
+651,Jay,Stansfield,Stansfield,4
+652,Matthew,Dibley-Dias,Dibley-Dias,3
+662,Adama,Traoré,Adama,3
+683,Luke,Harris,Harris,3
+688,Timothy,Castagne,Castagne,2
+692,Steven,Benda,Benda,1
+707,Fodé,Ballo-Touré,Ballo-Touré,2
+732,Devan,Tanton,Tanton,2
+796,Kristian,Sekularac,Sekularac,3
+810,Joshua,King,King,3
+289,Adrián,San Miguel del Castillo,Adrián,1
+290,Trent,Alexander-Arnold,Alexander-Arnold,2
+291,Alisson,Ramses Becker,A.Becker,1
+292,Stefan,Bajcetic,Bajcetic,3
+293,Darwin,Núñez Ribeiro,Darwin,4
+294,Diogo,Teixeira da Silva,Diogo J.,3
+295,Harvey,Elliott,Elliott,3
+296,Fabio Henrique,Tavares,Fabinho,3
+297,Cody,Gakpo,Gakpo,4
+298,Joe,Gomez,Gomez,2
+299,Jordan,Henderson,Henderson,3
+300,Curtis,Jones,Jones,3
+301,Caoimhin,Kelleher,Kelleher,1
+302,Ibrahima,Konaté,Konaté,2
+303,Luis,Díaz,Luis Díaz,3
+304,Alexis,Mac Allister,Mac Allister,3
+305,Joel,Matip,Matip,2
+306,Nathaniel,Phillips,Phillips,2
+307,Andrew,Robertson,Robertson,2
+308,Mohamed,Salah,Salah,3
+309,Dominik,Szoboszlai,Szoboszlai,3
+310,Thiago,Alcántara do Nascimento,Thiago,3
+311,Konstantinos,Tsimikas,Tsimikas,2
+312,Sepp,van den Berg,Van den Berg,2
+313,Virgil,van Dijk,Virgil,2
+626,Jarell,Quansah,Quansah,2
+627,Bobby,Clark,Clark,3
+628,Ben,Doak,Doak,3
+629,James,McConnell,McConnell,3
+668,Wataru,Endo,Endo,3
+708,Ryan,Gravenberch,Gravenberch,3
+726,Luke,Chambers,Chambers,2
+728,Callum,Scanlon,Scanlon,2
+743,Treymaurice,Nyoni,Nyoni,3
+756,Marcelo,de Araújo Pitaluga Filho,Pitaluga,1
+757,Conor,Bradley,Bradley,2
+782,Owen,Beck,Beck,2
+783,Kaide,Gordon,Gordon,3
+812,Lewis,Koumas,Koumas,4
+813,Fabian,Mrozek,Mrozek,1
+824,Jayden,Danns,Danns,4
+837,Amara,Nallo,Nallo,2
+21,Albert,Sambi Lokonga,Sambi,3
+52,Marvelous,Nakamba,Nakamba,3
+314,Elijah,Adebayo,Adebayo,4
+315,Mads Juel,Andersen,Andersen,2
+316,Amari'i,Bell,Bell,2
+317,Luke,Berry,Berry,3
+318,Reece,Burke,Burke,2
+319,Allan,Campbell,Campbell,3
+320,Jordan,Clark,Clark,3
+321,Alfie,Doughty,Doughty,2
+322,Luke,Freeman,Freeman,3
+323,Matt,Macey,Macey,1
+324,John,McAtee,McAtee,4
+325,Carlos,Mendes Gomes,Mendes,3
+326,Carlton,Morris,Morris,4
+327,Admiral,Muskwe,Muskwe,4
+328,Chiedozie,Ogbene,Ogbene,4
+329,Fred,Onyedinma,Onyedinma,3
+330,Gabriel,Osho,Osho,2
+331,Aribim,Pepple,Pepple,4
+332,Dion,Pereira,Pereira,3
+333,Dan,Potts,Potts,2
+334,Glen,Rea,Rea,3
+335,James,Shea,Shea,1
+336,Joe,Taylor,Taylor,4
+337,Elliot,Thorpe,Thorpe,3
+338,Jack,Walton,Walton,1
+339,Louie,Watson,Watson,3
+340,Cauley,Woodrow,Woodrow,4
+393,Teden,Mengi,Mengi,2
+553,Ryan,Giles,Giles,2
+575,Tom,Lockyer,Lockyer,2
+582,Pelly Ruddock,Mpanzu,Mpanzu,3
+586,Tahith,Chong,Chong,3
+602,Issa,Kaboré,Kaboré,2
+614,Thomas,Kaminski,Kaminski,1
+630,Ross,Barkley,Barkley,3
+631,Jacob,Brown,Brown,4
+648,Aidan,Francis-Clarke,Francis-Clarke,2
+665,Tim,Krul,Krul,1
+682,Joseph,Johnson,Johnson,2
+727,Andros,Townsend,Townsend,3
+729,Jayden,Luker,Luker,3
+734,Zack,Nelson,Nelson,3
+798,Daiki,Hashioka,Hashioka,2
+831,Axel,Piesold,Piesold,3
+839,Dominic,Dos Santos Martins,Martins,3
+844,Christian,Chigozie,Chigozie,2
+848,Taylan,Harris,Harris,4
+341,Manuel,Akanji,Akanji,2
+342,Nathan,Aké,Aké,2
+343,Julián,Álvarez,J.Alvarez,4
+344,Bernardo,Veiga de Carvalho e Silva,Bernardo,3
+345,Oscar,Bobb,Bobb,3
+346,João,Cancelo,Cancelo,2
+347,Scott,Carson,Carson,1
+348,Shea,Charles,Charles,3
+349,Kevin,De Bruyne,De Bruyne,3
+350,Rúben,Gato Alves Dias,Rúben,2
+352,Ederson,Santana de Moraes,Ederson M.,1
+353,Phil,Foden,Foden,3
+354,Jack,Grealish,Grealish,3
+355,Erling,Haaland,Haaland,4
+356,Mateo,Kovačić,Kovačić,3
+357,Aymeric,Laporte,Laporte,2
+358,Rico,Lewis,R.Lewis,2
+359,Riyad,Mahrez,Mahrez,3
+361,Stefan,Ortega Moreno,Ortega Moreno,1
+363,Máximo,Perrone,Perrone,3
+365,Rodrigo,Hernandez,Rodrigo,3
+366,Sergio,Gómez,Sergio Gómez,2
+367,Zack,Steffen,Steffen,1
+368,John,Stones,Stones,2
+369,Kyle,Walker,Walker,2
+566,Matheus Luiz,Nunes,Matheus N.,3
+616,Joško,Gvardiol,Gvardiol,2
+678,Jérémy,Doku,Doku,3
+762,Mahamadou,Susoho,Susoho,3
+771,Micah,Hamilton,Hamilton,3
+814,Jacob,Wright,Wright,3
+209,Mason,Mount,Mount,3
+370,Alex,Telles,Alex Telles,2
+371,Amad,Diallo,Amad,3
+372,Antony Matheus,dos Santos,Antony,3
+373,Bruno,Borges Fernandes,B.Fernandes,3
+374,Brandon,Williams,B.Williams,2
+375,Eric,Bailly,Bailly,2
+376,Carlos Henrique,Casimiro,Casemiro,3
+377,Diogo,Dalot Teixeira,Dalot,2
+379,Christian,Eriksen,Eriksen,3
+380,Álvaro,Fernández Carreras,Fernandez,2
+381,Frederico,Rodrigues de Paula Santos,Fred,3
+382,Alejandro,Garnacho,Garnacho,3
+383,Hannibal,Mejbri,Hannibal,3
+384,Tom,Heaton,Heaton,1
+386,Victor,Lindelöf,Lindelof,2
+387,Harry,Maguire,Maguire,2
+388,Kobbie,Mainoo,Mainoo,3
+389,Tyrell,Malacia,Malacia,2
+390,Anthony,Martial,Martial,4
+391,Lisandro,Martínez,Martinez,2
+392,Scott,McTominay,McTominay,3
+394,Facundo,Pellistri Rebollo,Pellistri,3
+395,Raphaël,Varane,R.Varane,2
+396,Marcus,Rashford,Rashford,3
+397,Jadon,Sancho,Sancho,3
+398,Luke,Shaw,Shaw,2
+399,Shola,Shoretire,Shoretire,4
+400,Donny,van de Beek,Van de Beek,3
+401,Aaron,Wan-Bissaka,Wan-Bissaka,2
+597,André,Onana,Onana,1
+617,Rasmus,Højlund,Højlund,4
+632,Omari,Forson,Forson,3
+669,Radek,Vítek,Vítek,1
+685,Daniel,Gore,Gore,3
+695,Altay,Bayindir,Altay,1
+703,Jonny,Evans,Evans,2
+709,Sofyan,Amrabat,Amrabat,3
+748,Joe,Hugill,Hugill,4
+766,Willy,Kambwala,Kambwala,2
+768,Rhys,Bennett,Bennett,2
+826,Toby,Collyer,Collyer,3
+833,Habeeb,Ogunneye,Ogunneye,2
+835,Dermot,Mee,Mee,1
+846,Harry,Amass,Amass,2
+850,Ethan,Wheatley,Wheatley,4
+856,Louis,Jackson,Jackson,2
+204,Lewis,Hall,Hall,2
+402,Miguel,Almirón Rejala,Almirón,3
+403,Elliot,Anderson,Anderson,3
+404,Harrison,Ashby,Ashby,2
+405,Sven,Botman,Botman,2
+406,Bruno,Guimarães Rodriguez Moura,Bruno G.,3
+407,Dan,Burn,Burn,2
+408,Karl,Darlow,Darlow,1
+409,Martin,Dubravka,Dubravka,1
+410,Ryan,Fraser,Fraser,3
+411,Mark,Gillespie,Gillespie,1
+412,Anthony,Gordon,Gordon,3
+413,Isaac,Hayden,Hayden,3
+414,Jeff,Hendrick,Hendrick,3
+415,Alexander,Isak,Isak,4
+416,Joelinton Cássio,Apolinário de Lira,Joelinton,3
+417,Emil,Krafth,Krafth,2
+418,Garang,Kuol,Kuol,3
+419,Jamaal,Lascelles,Lascelles,2
+420,Jamal,Lewis,J.Lewis,2
+421,Sean,Longstaff,Longstaff,3
+422,Javier,Manquillo Gaitán,Manquillo,2
+423,Jacob,Murphy,J.Murphy,3
+424,Nick,Pope,Pope,1
+425,Matt,Ritchie,Ritchie,3
+426,Allan,Saint-Maximin,Saint-Maximin,3
+427,Fabian,Schär,Schär,2
+428,Matt,Targett,Targett,2
+429,Sandro,Tonali,Tonali,3
+430,Kieran,Trippier,Trippier,2
+431,Kell,Watts,Watts,2
+432,Joe,Willock,Willock,3
+433,Callum,Wilson,Wilson,4
+580,Loris,Karius,Karius,1
+581,Paul,Dummett,Dummett,2
+603,Harvey,Barnes,Barnes,3
+633,Tino,Livramento,Livramento,2
+634,Alex,Murphy,A.Murphy,2
+635,Lewis,Miley,Miley,3
+738,Amadou,Diallo,Diallo,3
+739,Ben,Parkinson,Parkinson,4
+745,Michael,Ndiweni,Ndiweni,4
+794,Joe,White,White,3
+795,Travis,Hernes,Hernes,3
+23,Nuno,Varela Tavares,Tavares,2
+28,Matt,Turner,Turner,1
+205,Callum,Hudson-Odoi,Hudson-Odoi,3
+378,Anthony,Elanga,Elanga,3
+434,Brandon,Aguilera Zamora,B.Aguilera,3
+435,Harry,Arter,Arter,3
+436,Serge,Aurier,Aurier,2
+437,Taiwo,Awoniyi,Awoniyi,4
+438,Giulian,Biancone,Biancone,2
+439,Willy,Boly,Boly,2
+440,Josh,Bowler,Bowler,3
+441,Steve,Cook,Cook,2
+442,Danilo,dos Santos de Oliveira,Danilo,3
+443,Emmanuel,Dennis,Dennis,4
+444,Mohamed,Dräger,Dräger,2
+445,Felipe Augusto,de Almeida Monteiro,Felipe,2
+446,Remo,Freuler,Freuler,3
+447,Morgan,Gibbs-White,Gibbs-White,3
+448,Wayne,Hennessey,Hennessey,1
+449,Ethan,Horvath,Horvath,1
+451,Cheikhou,Kouyaté,Kouyaté,3
+452,Richie,Laryea,Laryea,2
+453,Orel,Mangala,Mangala,3
+454,Loïc,Mbe Soh,Mbe Soh,2
+455,Scott,McKenna,McKenna,2
+456,Alex,Mighten,Mighten,3
+457,Moussa,Niakhaté,Niakhaté,2
+458,Lewis,O'Brien,O'Brien,3
+459,Braian,Ojeda Rodríguez,Ojeda,3
+460,Jonathan,Panzo,Panzo,2
+461,Omar,Richards,O.Richards,2
+462,Gustavo Henrique,Furtado Scarpa,G.Scarpa,3
+463,Jonjo,Shelvey,J.Shelvey,3
+464,Sam,Surridge,Surridge,4
+465,Harry,Toffolo,Toffolo,2
+466,Hwang,Ui-jo,Ui-jo,4
+467,Neco,Williams,Williams,2
+468,Chris,Wood,Wood,4
+469,Joe,Worrall,Worrall,2
+470,Ryan,Yates,Yates,3
+604,Olu,Aina,Aina,2
+636,George,Shelvey,G.Shelvey,1
+637,Josh,Powell,Powell,2
+679,Gonzalo,Montiel,G.Montiel,2
+696,Murillo,Santiago Costa dos Santos,Murillo,2
+710,Odysseas,Vlachodimos,Odysseas,1
+711,Andrew,Omobamidele,Omobamidele,2
+712,Nicolás,Domínguez,Dominguez,3
+713,Ibrahim,Sangaré,Sangaré,3
+714,Divock,Origi,Origi,4
+779,Jamie,McDonnell,McDonnell,3
+780,Detlef Esapa,Osong,Osong,4
+781,Joe,Gardner,Gardner,4
+801,Giovanni,Reyna,Reyna,3
+808,Matz,Sels,Sels,1
+809,Rodrigo,Duarte Ribeiro,Ribeiro,4
+27,Auston,Trusty,Trusty,2
+33,Cameron,Archer,Archer,4
+255,Mason,Holgate,Holgate,2
+360,James,McAtee,McAtee,3
+471,Anel,Ahmedhodžić,Ahmedhodžić,2
+472,Jordan,Amissah,Amissah,1
+473,George,Baldock,Baldock,2
+474,Chris,Basham,Basham,2
+476,Jayden,Bogle,Bogle,2
+477,Rhian,Brewster,Brewster,4
+478,Ismaila,Coulibaly,Coulibaly,3
+479,Adam,Davies,A.Davies,1
+480,John,Egan,Egan,2
+481,John,Fleck,Fleck,3
+482,Wes,Foderingham,Foderingham,1
+483,Daniel,Jebbison,Jebbison,4
+484,Max,Lowe,Lowe,2
+485,Oliver,McBurnie,McBurnie,4
+486,Iliman,Ndiaye,Ndiaye,4
+487,Rhys,Norrington-Davies,Norrington-Davies,2
+488,Oliver,Norwood,Norwood,3
+489,Ben,Osborn,Osborn,3
+490,William,Osula,Osula,4
+576,Jack,Robinson,Robinson,2
+587,Anis,Slimane,Slimane,3
+592,Yasser,Larouci,Larouci,2
+593,Bénie,Traoré,T.Bénie,4
+638,Vini,de Souza Costa,Vini Souza,3
+653,Femi,Seriki,Seriki,2
+654,Louie,Marsh,Marsh,4
+655,Andre,Brooks,Brooks,3
+656,Antwoine,Hackford,Hackford,4
+663,Gustavo,Hamer,Hamer,3
+666,Tom,Davies,T.Davies,3
+693,Luke,Thomas,Thomas,2
+730,Ryan,Oné,Oné,3
+731,Jili,Buyabu,Buyabu,2
+759,Sydie,Peck,Peck,3
+775,Ben,Brereton,Brereton Díaz,3
+790,Ivo,Grbic,Grbić,1
+822,Billy,Blacker,Blacker,4
+823,Oliver,Arblaster,Arblaster,3
+827,Dovydas,Sasnauskas,Sasnauskas,2
+828,Sam,Curtis,Curtis,2
+857,Owen,Hampson,Hampson,3
+450,Brennan,Johnson,Johnson,3
+491,Brandon,Austin,Austin,1
+492,Rodrigo,Bentancur,Bentancur,3
+493,Yves,Bissouma,Bissouma,3
+494,Bryan,Gil Salvatierra,Bryan,3
+495,Ben,Davies,Davies,2
+496,Eric,Dier,Dier,2
+497,Emerson,Leite de Souza Junior,E.Royal,2
+498,Fraser,Forster,Forster,1
+499,Pierre-Emile,Højbjerg,Højbjerg,3
+500,Harry,Kane,Kane,4
+501,Dejan,Kulusevski,Kulusevski,3
+502,Hugo,Lloris,Lloris,1
+503,Giovani,Lo Celso,Lo Celso,3
+504,James,Maddison,Maddison,3
+505,Tanguy,Ndombélé Alvaro,Ndombele,3
+506,Pedro,Porro,Pedro Porro,2
+507,Ivan,Perišić,Perišić,2
+509,Richarlison,de Andrade,Richarlison,3
+510,Joe,Rodon,Rodon,2
+511,Cristian,Romero,Romero,2
+512,Davinson,Sánchez,Sánchez,2
+513,Pape Matar,Sarr,Sarr,3
+514,Ryan,Sessegnon,Sessegnon,2
+515,Oliver,Skipp,Skipp,3
+516,Son,Heung-min,Son,3
+517,Djed,Spence,Spence,2
+518,Japhet,Tanganga,Tanganga,2
+519,Destiny,Udogie,Udogie,2
+520,Guglielmo,Vicario,Vicario,1
+521,Alfie,Whiteman,Whiteman,1
+583,Manor,Solomon,Solomon,3
+639,Micky,van de Ven,Van de Ven,2
+640,Dane,Scarlett,Scarlett,4
+641,Alejo,Véliz,Veliz,4
+702,Ashley,Phillips,Phillips,2
+722,Jamie,Donley,Donley,4
+740,Alfie,Dorrington,Dorrington,2
+754,Yago,de Santiago Alonso,Yago Santiago,3
+776,Timo,Werner,Werner,4
+777,Radu,Dragusin,Drăgușin,2
+860,Mikey,Moore,Moore,3
+862,Tyrese,Hall,Hall,3
+364,Kalvin,Phillips,Phillips,3
+522,Nayef,Aguerd,N.Aguerd,2
+523,Michail,Antonio,Antonio,4
+524,Alphonse,Areola,Areola,1
+525,Saïd,Benrahma,Benrahma,3
+526,Jarrod,Bowen,Bowen,3
+527,Maxwel,Cornet,Cornet,3
+528,Vladimír,Coufal,Coufal,2
+529,Conor,Coventry,Coventry,3
+530,Aaron,Cresswell,Cresswell,2
+531,Flynn,Downes,Downes,3
+532,Emerson,Palmieri dos Santos,Emerson,2
+533,Lukasz,Fabianski,Fabianski,1
+534,Pablo,Fornals Malla,P.Fornals,3
+535,Danny,Ings,Ings,4
+536,Ben,Johnson,Johnson,2
+537,Thilo,Kehrer,Kehrer,2
+538,Divin,Mubama,Mubama,4
+539,Lucas,Tolentino Coelho de Lima,L.Paquetá,3
+541,Gianluca,Scamacca,Scamacca,4
+542,Tomáš,Souček,Souček,3
+543,Nikola,Vlašić,Vlašić,3
+544,Kurt,Zouma,Zouma,2
+577,Angelo,Ogbonna,Ogbonna,2
+642,Edson,Álvarez Velázquez,Álvarez,3
+647,Joseph,Anang,Anang,1
+664,James,Ward-Prowse,Ward-Prowse,3
+676,Konstantinos,Mavropanos,Mavropanos,2
+689,Mohammed,Kudus,Kudus,3
+773,Lewis,Orford,Orford,3
+774,Kaelan,Casey,Casey,2
+784,Oliver,Scarles,Scarles,2
+785,Callum,Marshall,Marshall,4
+829,George,Earthy,Earthy,3
+351,Tommy,Doyle,Doyle,3
+545,Rayan,Aït-Nouri,Aït-Nouri,2
+546,Daniel,Bentley,Bentley,1
+547,Bendegúz,Bolla,Bolla,2
+548,Hugo,Bueno López,H.Bueno,2
+549,Francisco Jorge,Tomás Oliveira,Chiquinho,3
+550,Luke,Cundle,Cundle,3
+551,Craig,Dawson,Dawson,2
+552,Fábio,Silva,Fábio Silva,4
+554,Gonçalo Manuel,Ganchinho Guedes,Guedes,3
+555,Joe,Hodge,Hodge,3
+556,Ki-Jana,Hoever,Hoever,2
+557,Hwang,Hee-chan,Hee Chan,3
+559,João Victor,Gomes da Silva,João Gomes,3
+560,Jonathan,Castro Otto,J.Otto,2
+561,Bruno,Cavaco Jordão,Jordão,3
+562,Sasa,Kalajdzic,Kalajdžić,4
+563,Max,Kilman,Kilman,2
+564,Tom,King,King,1
+565,Mario,Lemina,Mario Jr.,3
+567,Pedro,Lomba Neto,Neto,3
+568,Daniel,Castelo Podence,Podence,3
+569,José,Malheiro de Sá,José Sá,1
+570,Pablo,Sarabia,Sarabia,3
+571,Matija,Šarkić,Šarkić,1
+572,Nélson,Cabral Semedo,N.Semedo,2
+573,Toti António,Gomes,Toti,2
+574,Boubacar,Traoré,Boubacar Traore,3
+590,Matheus,Santos Carneiro Da Cunha,Cunha,4
+598,Matt,Doherty,Doherty,2
+697,Santiago,Bueno,S.Bueno,2
+698,Enso,González,González,3
+704,Nathan,Fraser,Fraser,4
+715,Jean-Ricner,Bellegarde,Bellegarde,3
+749,Matthew,Whittingham,Whittingham,3
+750,Tawanda,Chirewa,Chirewa,3
+751,Justin,Hubner,Hubner,2
+769,Owen,Hesketh,Hesketh,3
+770,Ty,Barnett,Barnett,3
+787,Harvey,Griffiths,Griffiths,3
+788,Yerson,Mosquera,Mosquera,2
+800,Noha,Lemina,N.Lemina,3
+832,Wesley,Okoduwa,Okoduwa,2
+836,Leon,Chiwome,Chiwome,4
+840,Fletcher,Holman,Holman,4
+853,Temple,Ojinnaka,Ojinnaka,3

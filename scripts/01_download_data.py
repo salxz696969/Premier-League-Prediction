@@ -15,13 +15,17 @@ Run:  uv run python scripts/01_download_data.py
 import sys
 import urllib.error
 
-from eplpred import data, managers, other_competitions, players
+from eplpred import data, logos, managers, other_competitions, players
 
 if __name__ == "__main__":
     force = "--force" in sys.argv
     data.download_raw(force=force)
     other_competitions.download(force=force)
     players.download(force=force)
+    try:
+        logos.download(force=force)
+    except urllib.error.URLError as error:
+        print(f"Club crests not downloaded ({error}); the website falls back to coloured badges.")
     if not managers.available():
         try:
             managers.download()

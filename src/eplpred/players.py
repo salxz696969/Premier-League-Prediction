@@ -63,7 +63,10 @@ FPL_NAMES = {
     "Nott'm Forest": "Nottingham Forest",
 }
 KEEP = ["name", "element", "fixture", "kickoff_time", "was_home", "opponent_team", "minutes", "starts",
-        "influence", "creativity", "threat", "ict_index", "value", "team"]
+        "influence", "creativity", "threat", "ict_index", "value", "team", "position",
+        "goals_scored", "assists", "clean_sheets", "goals_conceded", "saves", "yellow_cards", "red_cards",
+        "bonus", "total_points"]
+POSITIONS = {1: "GK", 2: "DEF", 3: "MID", 4: "FWD", 5: "MGR"}
 
 
 def season_label(year: int) -> str:
@@ -89,6 +92,13 @@ def download(force: bool = False) -> None:
         df = pd.read_csv(io.BytesIO(_get(f"{BASE_URL}/{season_label(year)}/gws/merged_gw.csv")),
                          encoding="utf-8", encoding_errors="replace", low_memory=False)
         df[[c for c in KEEP if c in df.columns]].to_csv(path, index=False, compression="gzip")
+
+    for year in range(FIRST_FPL_SEASON, config.LAST_SEASON + 1):
+        path = RAW / f"players_{season_label(year)}.csv"
+        if path.exists() and not force:
+            continue
+        raw = pd.read_csv(io.BytesIO(_get(f"{BASE_URL}/{season_label(year)}/players_raw.csv")), low_memory=False)
+        raw[["id", "first_name", "second_name", "web_name", "element_type"]].to_csv(path, index=False)
 
 
 def player_key(name: str) -> str:
@@ -136,6 +146,11 @@ def load_player_matches(matches: pd.DataFrame) -> pd.DataFrame:
             names = df.dropna(subset=["team_id"]).groupby("team_id")["team"].agg(lambda s: s.mode()[0]).to_dict()
         df["team_name"] = df["team_id"].map(names).map(lambda t: FPL_NAMES.get(t, t))
         df["player"] = df["name"].map(player_key)
+        info_path = RAW / f"players_{season_label(year)}.csv"
+        if info_path.exists():  # position (GK/DEF/MID/FWD) and short name for every season
+            info = pd.read_csv(info_path).set_index("id")
+            df["position"] = df["element"].map(info["element_type"]).map(POSITIONS)
+            df["short_name"] = df["element"].map(info["web_name"])
         df["starter"] = starters(df)
         frames.append(df)
     players = pd.concat(frames, ignore_index=True)
@@ -150,6 +165,9 @@ def load_player_matches(matches: pd.DataFrame) -> pd.DataFrame:
     players["match_id"] = players["match_id"].astype(int)
     keep = ["season", "match_id", "date", "team_name", "player", "starter", "minutes",
             "influence", "creativity", "threat", "ict_index", "value"]
+    extra = ["position", "short_name", "goals_scored", "assists", "clean_sheets", "goals_conceded", "saves",
+             "yellow_cards", "red_cards", "bonus", "total_points"]
+    keep += [c for c in extra if c in players.columns]
     return players[keep].rename(columns={"team_name": "team"})
 
 

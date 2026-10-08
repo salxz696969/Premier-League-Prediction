@@ -209,7 +209,7 @@ function lineChart(container, series, { height = 300, yFormat = (v) => v, xTicks
 }
 
 /* ------------------------------------------------------------- router */
-const views = ["predict", "teams", "models", "evaluation", "seasons", "data", "report", "slides", "about"];
+const views = ["predict", "matches", "players", "teams", "models", "evaluation", "data", "report", "slides", "about"];
 const loaded = new Set();
 let current = null;
 
@@ -232,7 +232,7 @@ function route() {
   window.scrollTo({ top: 0 });
   if (!loaded.has(name)) {
     loaded.add(name);
-    ({ predict: initPredict, teams: initTeams, models: initModels, evaluation: initEvaluation, seasons: initSeasons, data: initData, report: initReport, slides: initSlides, about: async () => {} })[name]().catch((err) => toast(err.message));
+    ({ predict: initPredict, teams: initTeams, models: initModels, evaluation: initEvaluation, matches: initMatches, players: initPlayers, data: initData, report: initReport, slides: initSlides, about: async () => {} })[name]().catch((err) => toast(err.message));
   } else {
     redraw[name]?.();
   }
@@ -253,6 +253,7 @@ async function initPredict() {
   $("#home-team").innerHTML = options;
   $("#away-team").innerHTML = options;
   [$("#home-team").value, $("#away-team").value] = o.default_fixture;
+  Object.assign(BADGES, o.badges);
   let shown = [...o.default_fixture]; // the fixture currently in the two boxes
   const onPick = (changed, other) => () => {
     // Picking the team that's already on the other side swaps the two.
@@ -283,6 +284,8 @@ async function initPredict() {
 
 async function runPredict() {
   const home = $("#home-team").value, away = $("#away-team").value;
+  $("#home-crest").innerHTML = crest(home, "large");
+  $("#away-crest").innerHTML = crest(away, "large");
   if (home === away) { toast("Pick two different teams"); return; }
   const token = ++predictToken; // newer requests win, older answers are ignored
   const card = $("#result");
@@ -368,11 +371,12 @@ const selected = new Map(); // team -> colour slot (colour follows the team, not
 let teamsData;
 
 async function initTeams() {
+  Object.assign(BADGES, (await overview()).badges);
   teamsData = await api("/api/teams");
   const ranking = teamsData.ranking;
   const lo = Math.min(...ranking.map((r) => r.elo)) - 60, hi = Math.max(...ranking.map((r) => r.elo));
   $("#ranking").innerHTML = ranking
-    .map((r, i) => `<li title="Last season: ${r.position ? ordinal(r.position) : "–"}"><span class="rank">${i + 1}</span><span class="name">${esc(r.team)}</span><span class="track"><span class="fill" style="width:${((r.elo - lo) / (hi - lo)) * 100}%"></span></span><span class="num">${Math.round(r.elo)}</span></li>`)
+    .map((r, i) => `<li title="Last season: ${r.position ? ordinal(r.position) : "–"}"><span class="rank">${i + 1}</span><span class="name">${crest(r.team, "small")}<span>${esc(r.team)}</span></span><span class="track"><span class="fill" style="width:${((r.elo - lo) / (hi - lo)) * 100}%"></span></span><span class="num">${Math.round(r.elo)}</span></li>`)
     .join("");
   $("#team-chips").innerHTML = ranking
     .map((r) => `<button type="button" class="chip" aria-pressed="false" data-team="${esc(r.team)}"><span class="swatch"></span>${esc(r.team)}</button>`)
@@ -540,63 +544,6 @@ function drawModels() {
 let seasonData, matchLimit = 40;
 const CHECK = '<svg viewBox="0 0 12 12"><path d="M2.5 6.5l2.3 2.3 4.7-5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>';
 const CROSS = '<svg viewBox="0 0 12 12"><path d="M3 3l6 6M9 3l-6 6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>';
-
-async function initSeasons() {
-  const { seasons } = await api("/api/seasons");
-  const pick = $("#season-pick");
-  pick.innerHTML = [...seasons].reverse().map((s) => `<option value="${s.label}">${s.label}${s.tested ? "" : " (table only)"}</option>`).join("");
-  pick.addEventListener("change", loadSeason);
-  $("#team-filter").addEventListener("change", () => { matchLimit = 40; drawMatches(); });
-  $("#show-more").addEventListener("click", () => { matchLimit += 60; drawMatches(); });
-  await loadSeason();
-}
-
-async function loadSeason() {
-  const label = $("#season-pick").value;
-  seasonData = await api(`/api/season?label=${encodeURIComponent(label)}`);
-  if (seasonData.label !== $("#season-pick").value) return;
-  const s = seasonData, total = s.outcomes.H + s.outcomes.D + s.outcomes.A;
-  const tiles = [
-    [s.table[0].team, `Champions, ${s.table[0].points} points`, true],
-    [num(s.goals_per_match, 2), "Goals per match"],
-    [pct(s.outcomes.H / total), "Home wins"],
-    s.matches ? [pct(s.accuracy, 1), `Model accuracy (bookmaker ${pct(s.book_accuracy, 1)})`] : ["–", "Not a test season (used for training)"],
-  ];
-  $("#season-tiles").innerHTML = tiles.map(([v, l, small]) => `<div class="tile"><span class="tile-value ${small ? "small-text" : ""}">${esc(v)}</span><span class="tile-label">${esc(l)}</span></div>`).join("");
-  const n = s.table.length;
-  $("#league-table").innerHTML = `<thead><tr><th>#</th><th>Team</th><th>P</th><th>W</th><th>D</th><th>L</th><th>GD</th><th>Pts</th></tr></thead><tbody>${s.table
-    .map((r) => `<tr class="${r.position <= 4 ? "zone-top" : r.position > n - 3 ? "zone-bottom" : ""}"><td>${r.position}</td><td>${esc(r.team)}</td><td>${r.played}</td><td>${r.won}</td><td>${r.drawn}</td><td>${r.lost}</td><td>${r.gd > 0 ? "+" : ""}${r.gd}</td><td>${r.points}</td></tr>`)
-    .join("")}</tbody>`;
-  const filter = $("#team-filter");
-  filter.innerHTML = `<option value="">All teams</option>` + s.table.map((r) => r.team).sort().map((t) => `<option>${esc(t)}</option>`).join("");
-  $("#team-filter-wrap").hidden = !s.matches;
-  matchLimit = 40;
-  drawMatches();
-}
-
-function drawMatches() {
-  const s = seasonData, list = $("#match-list");
-  if (!s.matches) {
-    list.innerHTML = "";
-    $("#matches-note").textContent = "Seasons before 2014-15 were only used for training, so there are no honest predictions to show.";
-    $("#show-more").hidden = true;
-    return;
-  }
-  const team = $("#team-filter").value;
-  const rows = s.matches.filter((m) => !team || m.home === team || m.away === team);
-  const right = rows.filter((m) => m.predicted === m.result).length;
-  $("#matches-note").textContent = `Made before kick-off by a model trained only on earlier seasons. ${right} of ${rows.length} right (${pct(right / rows.length)}).`;
-  list.innerHTML = rows.slice(0, matchLimit).map((m) => {
-    const ok = m.predicted === m.result;
-    const label = { H: `${m.home} win`, D: "Draw", A: `${m.away} win` }[m.predicted];
-    return `<li class="match" title="Model's pick: ${esc(label)}">
-      <div class="teams"><div class="line"><span class="names">${esc(m.home)} <span class="score">${esc(m.score)}</span> ${esc(m.away)}</span></div><span class="date">${m.date}</span></div>
-      <div><div class="mini" aria-label="Home ${pct(m.prob.H)}, draw ${pct(m.prob.D)}, away ${pct(m.prob.A)}"><span style="width:${m.prob.H * 100}%;background:var(--home)"></span><span style="width:${m.prob.D * 100}%;background:var(--draw)"></span><span style="width:${m.prob.A * 100}%;background:var(--away)"></span></div>
-      <div class="mini-labels">${pct3([m.prob.H, m.prob.D, m.prob.A]).map((v) => `<span>${v}</span>`).join("")}</div></div>
-      <span class="mark ${ok ? "ok" : "no"}" role="img" aria-label="${ok ? "Correct" : "Wrong"}">${ok ? CHECK : CROSS}</span></li>`;
-  }).join("");
-  $("#show-more").hidden = rows.length <= matchLimit;
-}
 
 /* ------------------------------------------------- how it's calculated */
 let explainData, xgSide = "home";
@@ -1154,6 +1101,512 @@ function drawSlideChart(box, chart) {
   }
 }
 
+/* ------------------------------------------------------ custom dropdown */
+// Every <select> gets a styled button + list. The real <select> stays (hidden)
+// and keeps the value, so all other code keeps using select.value / "change".
+const VALUE = Object.getOwnPropertyDescriptor(HTMLSelectElement.prototype, "value");
+let openSelect = null;
+
+function enhanceSelect(sel) {
+  if (sel.dataset.enhanced) return;
+  sel.dataset.enhanced = "1";
+  const wrap = document.createElement("span");
+  wrap.className = "cs";
+  if (sel.closest(".team-pick")) wrap.classList.add("large");
+  const button = document.createElement("button");
+  button.type = "button";
+  button.className = "cs-button";
+  button.setAttribute("role", "combobox");
+  button.setAttribute("aria-haspopup", "listbox");
+  button.setAttribute("aria-expanded", "false");
+  button.setAttribute("aria-label", sel.getAttribute("aria-label") || "Choose");
+  button.innerHTML = '<span class="cs-text"></span><svg class="cs-chev" viewBox="0 0 12 12" aria-hidden="true"><path d="M3 4.5l3 3 3-3" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+  const pop = document.createElement("div");
+  pop.className = "cs-pop";
+  pop.setAttribute("role", "listbox");
+  pop.hidden = true;
+  sel.parentNode.insertBefore(wrap, sel);
+  wrap.append(sel, button, pop);
+  sel.classList.add("cs-native");
+  sel.tabIndex = -1;
+  sel.setAttribute("aria-hidden", "true");
+
+  let active = -1, search = "";
+  const options = () => [...sel.options];
+  const refresh = () => {
+    const o = sel.options[sel.selectedIndex];
+    $(".cs-text", button).textContent = o ? o.textContent : "";
+    wrap.hidden = sel.hidden;
+    button.disabled = sel.disabled;
+  };
+  const render = () => {
+    const list = options();
+    const filter = search.toLowerCase();
+    const searchBox = list.length > 12 ? `<input class="cs-search" type="search" placeholder="Search" aria-label="Search options" value="${esc(search)}">` : "";
+    pop.innerHTML = searchBox + `<div class="cs-list">${list.map((o, i) => (!filter || o.textContent.toLowerCase().includes(filter))
+      ? `<div class="cs-opt${o.selected ? " sel" : ""}" role="option" id="${sel.id || "cs"}-o${i}" data-i="${i}" aria-selected="${o.selected}">${esc(o.textContent)}<svg viewBox="0 0 12 12" aria-hidden="true"><path d="M2.5 6.5l2.3 2.3 4.7-5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></div>` : "").join("")}</div>`;
+    const input = $(".cs-search", pop);
+    if (input) {
+      input.addEventListener("input", () => { search = input.value; render(); const i2 = $(".cs-search", pop); i2.focus(); i2.setSelectionRange(i2.value.length, i2.value.length); });
+      input.addEventListener("keydown", keys);
+    }
+  };
+  const visible = () => $$(".cs-opt", pop);
+  const highlight = (k) => {
+    const items = visible();
+    if (!items.length) return;
+    active = (k + items.length) % items.length;
+    items.forEach((it, j) => it.classList.toggle("active", j === active));
+    items[active].scrollIntoView({ block: "nearest" });
+    button.setAttribute("aria-activedescendant", items[active].id);
+  };
+  const choose = (i) => {
+    if (i !== sel.selectedIndex) {
+      sel.selectedIndex = i;
+      sel.dispatchEvent(new Event("change", { bubbles: true }));
+    }
+    refresh();
+    close(true);
+  };
+  const open = () => {
+    if (openSelect && openSelect !== close) openSelect();
+    search = "";
+    render();
+    pop.hidden = false;
+    wrap.classList.add("open");
+    button.setAttribute("aria-expanded", "true");
+    const r = button.getBoundingClientRect();
+    pop.classList.toggle("up", innerHeight - r.bottom < 300 && r.top > innerHeight - r.bottom);
+    highlight(Math.max(0, visible().findIndex((it) => +it.dataset.i === sel.selectedIndex)));
+    ($(".cs-search", pop) || button).focus();
+    openSelect = close;
+  };
+  function close(focus) {
+    pop.hidden = true;
+    wrap.classList.remove("open");
+    button.setAttribute("aria-expanded", "false");
+    button.removeAttribute("aria-activedescendant");
+    if (openSelect === close) openSelect = null;
+    if (focus === true) button.focus();
+  }
+  function keys(e) {
+    const items = visible();
+    if (e.key === "ArrowDown") { e.preventDefault(); pop.hidden ? open() : highlight(active + 1); }
+    else if (e.key === "ArrowUp") { e.preventDefault(); pop.hidden ? open() : highlight(active - 1); }
+    else if (e.key === "Home" && !pop.hidden) { e.preventDefault(); highlight(0); }
+    else if (e.key === "End" && !pop.hidden) { e.preventDefault(); highlight(items.length - 1); }
+    else if ((e.key === "Enter" || (e.key === " " && e.target === button)) ) { e.preventDefault(); pop.hidden ? open() : items[active] && choose(+items[active].dataset.i); }
+    else if (e.key === "Escape" && !pop.hidden) { e.preventDefault(); close(true); }
+    else if (e.key === "Tab" && !pop.hidden) { close(); }
+    else if (e.target === button && e.key.length === 1 && /\S/.test(e.key)) {
+      const k = options().findIndex((o) => o.textContent.toLowerCase().startsWith(e.key.toLowerCase()));
+      if (k >= 0) { if (pop.hidden) choose(k); else highlight(visible().findIndex((it) => +it.dataset.i === k)); }
+    }
+  }
+  button.addEventListener("click", () => (pop.hidden ? open() : close(true)));
+  button.addEventListener("keydown", keys);
+  pop.addEventListener("click", (e) => { const it = e.target.closest(".cs-opt"); if (it) choose(+it.dataset.i); });
+  pop.addEventListener("mousemove", (e) => { const it = e.target.closest(".cs-opt"); if (it) highlight(visible().indexOf(it)); });
+  sel.addEventListener("change", refresh);
+  Object.defineProperty(sel, "value", { configurable: true, get() { return VALUE.get.call(this); }, set(v) { VALUE.set.call(this, v); refresh(); } });
+  new MutationObserver(refresh).observe(sel, { childList: true, subtree: true, attributes: true, attributeFilter: ["hidden", "disabled"] });
+  refresh();
+}
+document.addEventListener("pointerdown", (e) => { if (openSelect && !e.target.closest(".cs")) openSelect(); });
+window.addEventListener("resize", () => openSelect && openSelect());
+new MutationObserver(() => $$("select:not([data-enhanced])").forEach(enhanceSelect)).observe(document.body, { childList: true, subtree: true });
+
+/* ------------------------------------------------------------ football */
+// Club crest when we have one (img), else a disc in the club colour with its code.
+const badgeHTML = (b, size = "") => `<span class="badge ${b.logo ? "logo" : ""} ${size}" style="--c:${b.color};--ink:${b.ink}" title="${esc(b.name)}" aria-hidden="true">${b.logo ? `<img src="${esc(b.logo)}" alt="" decoding="async">` : ""}<span class="code">${esc(b.code)}</span></span>`;
+const BADGES = {};
+const crest = (team, size) => (BADGES[team] ? badgeHTML(BADGES[team], size) : "");
+// A crest that fails to load falls back to the coloured disc.
+document.addEventListener("error", (e) => { if (e.target.matches?.(".badge.logo img")) { e.target.parentNode.classList.remove("logo"); e.target.remove(); } }, true);
+const formPill = (r) => `<span class="pill ${r}" title="${{ W: "Win", D: "Draw", L: "Loss" }[r]}">${r}</span>`;
+const fmtDate = (d, opts = { weekday: "long", day: "numeric", month: "long", year: "numeric" }) => new Date(`${d}T12:00:00`).toLocaleDateString("en-GB", opts);
+const COMP_NAMES = { premier_league: "Premier League", fa_cup: "FA Cup", league_cup: "League Cup", champions_league: "Champions League", europa_league: "Europa League" };
+const stagger = (html, i) => html.replace(/^<(\w+)/, `<$1 style="--i:${Math.min(i, 20)}"`);
+
+function matchRow(m, i = 0) {
+  const played = m.home_goals != null;
+  const hw = played && m.home_goals > m.away_goals, aw = played && m.away_goals > m.home_goals;
+  const pred = m.prediction;
+  let predHTML = "";
+  if (pred) {
+    const ok = pred.pick === m.result;
+    predHTML = `<span class="mr-pred" title="Model before kick-off: home ${pct(pred.H)}, draw ${pct(pred.D)}, away ${pct(pred.A)}">
+      <span class="mini"><span style="width:${pred.H * 100}%;background:var(--home)"></span><span style="width:${pred.D * 100}%;background:var(--draw)"></span><span style="width:${pred.A * 100}%;background:var(--away)"></span></span>
+      <span class="mark ${ok ? "ok" : "no"}" role="img" aria-label="${ok ? "Model was right" : "Model was wrong"}">${ok ? CHECK : CROSS}</span></span>`;
+  }
+  const tag = m.id != null ? "button" : "div";
+  return `<${tag} ${m.id != null ? `type="button" data-match="${m.id}"` : ""} class="match-row ${m.id != null ? "clickable" : ""}" style="--i:${Math.min(i, 20)}">
+    <span class="mr-team home ${aw ? "lost" : ""}"><span class="mr-name">${esc(m.home.name)}</span>${badgeHTML(m.home)}</span>
+    <span class="mr-score">${played ? `<b>${m.home_goals}</b><i>-</i><b>${m.away_goals}</b>` : "<i>v</i>"}<small>${esc(m.note || m.round || "FT")}</small></span>
+    <span class="mr-team away ${hw ? "lost" : ""}">${badgeHTML(m.away)}<span class="mr-name">${esc(m.away.name)}</span></span>
+    ${predHTML}
+  </${tag}>`;
+}
+
+function groupByDate(list) {
+  const groups = [];
+  for (const m of list) {
+    if (!groups.length || groups[groups.length - 1].date !== m.date) groups.push({ date: m.date, items: [] });
+    groups[groups.length - 1].items.push(m);
+  }
+  return groups;
+}
+
+/* ---------- Matches page */
+const mc = { season: null, comp: "premier_league", view: "fixtures", round: null, rounds: [], dir: 0 };
+
+async function initMatches() {
+  const ov = await api("/api/football/overview");
+  $("#mc-season").innerHTML = ov.seasons.map((x) => `<option>${x}</option>`).join("");
+  mc.season = ov.seasons[0];
+  $("#mc-season").value = mc.season;
+  $("#mc-season").addEventListener("change", async () => { mc.season = $("#mc-season").value; mc.round = null; await loadComps(); });
+  $("#mc-comps").addEventListener("click", (e) => {
+    const b = e.target.closest(".chip");
+    if (!b) return;
+    mc.comp = b.dataset.comp; mc.round = null; mc.dir = 0;
+    $$("#mc-comps .chip").forEach((c) => c.setAttribute("aria-pressed", c === b));
+    if (mc.comp !== "premier_league") setView("fixtures");
+    $("#mc-view").hidden = mc.comp !== "premier_league";
+    loadFixtures();
+  });
+  $("#mc-view").addEventListener("click", (e) => { const b = e.target.closest("button"); if (b) setView(b.dataset.v); });
+  $("#mc-prev").addEventListener("click", () => stepRound(-1));
+  $("#mc-next").addEventListener("click", () => stepRound(1));
+  $("#mc-round").addEventListener("change", () => { const k = $("#mc-round").value; mc.dir = mc.rounds.findIndex((r) => r.key === k) > mc.rounds.findIndex((r) => r.key === mc.round) ? 1 : -1; mc.round = k; loadFixtures(); });
+  $("#mc-list").addEventListener("click", (e) => { const r = e.target.closest("[data-match]"); if (r) openSheet({ type: "match", id: +r.dataset.match }); });
+  $("#mc-league").addEventListener("click", (e) => { const r = e.target.closest("[data-team]"); if (r) openSheet({ type: "team", name: r.dataset.team, season: mc.season }); });
+  enableSwipe($("#mc-list"), (d) => stepRound(d));
+  await loadComps();
+  redraw.matches = () => moveThumb($("#mc-view"));
+}
+
+async function loadComps() {
+  const ov = await api(`/api/football/overview?season=${encodeURIComponent(mc.season)}`);
+  if (!ov.competitions.some((c) => c.key === mc.comp)) mc.comp = "premier_league";
+  $("#mc-comps").innerHTML = ov.competitions.map((c) => `<button type="button" class="chip comp ${c.key}" data-comp="${c.key}" aria-pressed="${c.key === mc.comp}"><span class="comp-dot"></span>${esc(c.name)}</button>`).join("");
+  $("#mc-view").hidden = mc.comp !== "premier_league";
+  moveThumb($("#mc-view"));
+  if (mc.view === "table") loadTable(); else loadFixtures();
+}
+
+function setView(v) {
+  mc.view = v;
+  $$("#mc-view button").forEach((b) => b.setAttribute("aria-pressed", b.dataset.v === v));
+  moveThumb($("#mc-view"));
+  $("#mc-fixtures").hidden = v !== "fixtures";
+  $("#mc-table").hidden = v !== "table";
+  if (v === "table") loadTable(); else loadFixtures();
+}
+
+function stepRound(d) {
+  const i = mc.rounds.findIndex((r) => r.key === mc.round) + d;
+  if (i < 0 || i >= mc.rounds.length) return;
+  mc.dir = d; mc.round = mc.rounds[i].key; loadFixtures();
+}
+
+let fixturesToken = 0;
+async function loadFixtures() {
+  const token = ++fixturesToken;
+  const q = new URLSearchParams({ season: mc.season, competition: mc.comp });
+  if (mc.round) q.set("round", mc.round);
+  const r = await api(`/api/football/matches?${q}`);
+  if (token !== fixturesToken) return;
+  mc.rounds = r.rounds; mc.round = r.rounds[r.round_index].key;
+  const label = (x) => (x.matchweek ? `Matchweek ${x.matchweek} · ${fmtDate(x.start, { day: "numeric", month: "short" })}${x.end !== x.start ? `–${fmtDate(x.end, { day: "numeric", month: "short" })}` : ""}` : x.label);
+  $("#mc-round").innerHTML = r.rounds.map((x) => `<option value="${esc(x.key)}">${esc(label(x))}</option>`).join("");
+  $("#mc-round").value = mc.round;
+  $("#mc-prev").disabled = r.round_index === 0;
+  $("#mc-next").disabled = r.round_index === r.rounds.length - 1;
+  const list = $("#mc-list");
+  list.classList.remove("from-left", "from-right", "stagger");
+  void list.offsetWidth;
+  list.innerHTML = groupByDate(r.matches).map((g) => `<div class="card day"><p class="day-head">${fmtDate(g.date)}<span>${esc(COMP_NAMES[mc.comp])}</span></p>${g.items.map((m, i) => matchRow(m, i)).join("")}</div>`).join("");
+  list.classList.add(mc.dir > 0 ? "from-right" : mc.dir < 0 ? "from-left" : "stagger");
+}
+
+async function loadTable() {
+  const t = await api(`/api/football/table?season=${encodeURIComponent(mc.season)}`);
+  const n = t.table.length;
+  $("#mc-league").innerHTML = `<thead><tr><th>#</th><th class="t-team">Team</th><th>P</th><th class="hide-s">W</th><th class="hide-s">D</th><th class="hide-s">L</th><th class="hide-s">Goals</th><th>GD</th><th>Pts</th><th class="t-form">Form</th></tr></thead><tbody class="stagger">` +
+    t.table.map((r, i) => `<tr data-team="${esc(r.team.name)}" style="--i:${Math.min(i, 20)}" class="${r.position <= 4 ? "zone-top" : r.position > n - 3 ? "zone-bottom" : ""}" tabindex="0">
+      <td class="t-pos">${r.position}</td><td class="t-team"><span class="t-team-in">${badgeHTML(r.team, "small")}<span>${esc(r.team.name)}</span></span></td>
+      <td>${r.played}</td><td class="hide-s">${r.won}</td><td class="hide-s">${r.drawn}</td><td class="hide-s">${r.lost}</td><td class="hide-s">${r.gf}:${r.ga}</td>
+      <td>${r.gd > 0 ? "+" : ""}${r.gd}</td><td class="t-pts">${r.points}</td><td class="t-form">${r.form.map(formPill).join("")}</td></tr>`).join("") + "</tbody>";
+  $$("#mc-league tr[data-team]").forEach((tr) => tr.addEventListener("keydown", (e) => { if (e.key === "Enter") tr.click(); }));
+}
+
+/* ---------- Swipe (touch) to change round, 1:1 with the finger */
+function enableSwipe(el, onSwipe) {
+  let x0 = null, y0 = 0, dx = 0, locked = null;
+  el.addEventListener("pointerdown", (e) => { if (e.pointerType !== "touch") return; x0 = e.clientX; y0 = e.clientY; dx = 0; locked = null; });
+  el.addEventListener("pointermove", (e) => {
+    if (x0 == null) return;
+    dx = e.clientX - x0;
+    if (locked == null && Math.hypot(dx, e.clientY - y0) > 10) locked = Math.abs(dx) > Math.abs(e.clientY - y0);
+    if (locked) el.style.transform = `translateX(${dx * 0.6}px)`;
+  });
+  const end = () => {
+    if (x0 == null) return;
+    el.style.transform = "";
+    if (locked && Math.abs(dx) > 70) onSwipe(dx < 0 ? 1 : -1);
+    x0 = null;
+  };
+  el.addEventListener("pointerup", end);
+  el.addEventListener("pointercancel", end);
+}
+
+/* ---------- Sheet (match / team / player details) */
+const sheet = { stack: [] };
+
+function openSheet(item, push = true) {
+  if (push) sheet.stack.push(item);
+  const el = $("#sheet"), bd = $("#sheet-backdrop");
+  if (el.hidden) {
+    el.hidden = false; bd.hidden = false;
+    void el.offsetWidth;
+    el.classList.add("open"); bd.classList.add("open");
+    document.body.classList.add("sheet-open");
+  }
+  $("#sheet-back").hidden = sheet.stack.length < 2;
+  const body = $("#sheet-body");
+  body.innerHTML = '<div class="sheet-loading"><span class="spinner"></span></div>';
+  body.scrollTop = 0;
+  ({ match: renderMatchSheet, team: renderTeamSheet, player: renderPlayerSheet })[item.type](item).catch((err) => toast(err.message));
+  $("#sheet-close").focus({ preventScroll: true });
+}
+
+function closeSheet() {
+  const el = $("#sheet"), bd = $("#sheet-backdrop");
+  el.classList.remove("open"); bd.classList.remove("open");
+  el.style.transform = "";
+  document.body.classList.remove("sheet-open");
+  sheet.stack = [];
+  setTimeout(() => { if (!el.classList.contains("open")) { el.hidden = true; bd.hidden = true; } }, 420);
+}
+
+function initSheet() {
+  $("#sheet-close").addEventListener("click", closeSheet);
+  $("#sheet-backdrop").addEventListener("click", closeSheet);
+  $("#sheet-back").addEventListener("click", () => { sheet.stack.pop(); openSheet(sheet.stack[sheet.stack.length - 1], false); });
+  document.addEventListener("keydown", (e) => { if (e.key === "Escape" && !$("#sheet").hidden && !openSelect) closeSheet(); });
+  $("#sheet-body").addEventListener("click", (e) => {
+    const t = e.target.closest("[data-open]");
+    if (!t) return;
+    const [type, a, b] = t.dataset.open.split("|");
+    openSheet(type === "match" ? { type, id: +a } : type === "team" ? { type, name: a, season: b } : { type, key: a });
+  });
+  // Drag the bar down to dismiss (phones): follows the finger, then springs back or closes.
+  const bar = $("#sheet-bar"), el = $("#sheet");
+  let y0 = null, dy = 0, t0 = 0;
+  bar.addEventListener("pointerdown", (e) => { if (e.target.closest("button") || !matchMedia("(max-width: 640px)").matches) return; y0 = e.clientY; dy = 0; t0 = performance.now(); bar.setPointerCapture(e.pointerId); el.classList.add("dragging"); });
+  bar.addEventListener("pointermove", (e) => { if (y0 == null) return; dy = Math.max(0, e.clientY - y0); el.style.transform = `translateY(${dy}px)`; });
+  const end = () => {
+    if (y0 == null) return;
+    el.classList.remove("dragging");
+    const v = dy / Math.max(1, performance.now() - t0);
+    y0 = null;
+    if (dy > 140 || v > 0.6) closeSheet(); else el.style.transform = "";
+  };
+  bar.addEventListener("pointerup", end);
+  bar.addEventListener("pointercancel", end);
+}
+
+function sheetTabs(tabs, active) {
+  return `<div class="segmented small sheet-tabs" role="group" aria-label="Sections"><span class="segmented-thumb" aria-hidden="true"></span>${tabs.map(([k, l]) => `<button type="button" data-tab="${k}" aria-pressed="${k === active}">${l}</button>`).join("")}</div>`;
+}
+function wireTabs(root, render) {
+  const seg = $(".sheet-tabs", root);
+  seg.addEventListener("click", (e) => {
+    const b = e.target.closest("button");
+    if (!b) return;
+    $$("button", seg).forEach((x) => x.setAttribute("aria-pressed", x === b));
+    moveThumb(seg);
+    render(b.dataset.tab);
+  });
+  requestAnimationFrame(() => moveThumb(seg));
+}
+
+function pointsChip(p) {
+  const cls = p >= 10 ? "great" : p >= 6 ? "good" : p >= 3 ? "ok" : "low";
+  return `<span class="pts ${cls}" title="FPL points">${p}</span>`;
+}
+
+async function renderMatchSheet(item) {
+  const m = await api(`/api/football/match?id=${item.id}`);
+  const c = m.card;
+  const body = $("#sheet-body");
+  const hw = c.home_goals > c.away_goals, aw = c.away_goals > c.home_goals;
+  body.innerHTML = `
+    <div class="scoreboard">
+      <p class="sb-meta">Premier League · ${esc(m.season)} · ${fmtDate(c.date)}</p>
+      <div class="sb-main">
+        <button type="button" class="sb-team" data-open="team|${esc(c.home.name)}|${esc(m.season)}">${badgeHTML(c.home, "large")}<span class="${aw ? "lost" : ""}">${esc(c.home.name)}</span></button>
+        <div class="sb-score"><span class="sb-goals">${c.home_goals}<i>-</i>${c.away_goals}</span><span class="sb-status">Full time${c.ht ? ` · HT ${c.ht}` : ""}</span></div>
+        <button type="button" class="sb-team" data-open="team|${esc(c.away.name)}|${esc(m.season)}">${badgeHTML(c.away, "large")}<span class="${hw ? "lost" : ""}">${esc(c.away.name)}</span></button>
+      </div>
+      ${m.referee ? `<p class="sb-meta">Referee: ${esc(m.referee)}</p>` : ""}
+    </div>
+    ${sheetTabs([["overview", "Overview"], ["lineups", "Line-ups"], ["prediction", "Prediction"], ["h2h", "Head-to-head"]], "overview")}
+    <div class="sheet-panel" id="sheet-panel"></div>`;
+  const panel = $("#sheet-panel");
+  const draw = (tab) => {
+    panel.classList.remove("panel-in"); void panel.offsetWidth; panel.classList.add("panel-in");
+    if (tab === "overview") {
+      const rows = m.stats.map((st) => {
+        const h = st.home ?? 0, a = st.away ?? 0, tot = h + a || 1;
+        return `<div class="stat"><span class="sv ${h > a ? "lead" : ""}" style="--c:${c.home.color};--ink:${c.home.ink}">${st.home ?? "–"}</span><span class="st-label">${esc(st.label)}</span><span class="sv ${a > h ? "lead" : ""}" style="--c:${c.away.color};--ink:${c.away.ink}">${st.away ?? "–"}</span>
+          <span class="sbar home"><span data-w="${(h / tot) * 100}" style="--c:${c.home.color}"></span></span><span class="sbar away"><span data-w="${(a / tot) * 100}" style="--c:${c.away.color}"></span></span></div>`;
+      }).join("");
+      const b = m.before;
+      const formRow = (side) => `<div class="form-line">${badgeHTML(c[side], "small")}<span class="form-pills">${b.form[side].map((f) => `<button type="button" class="pill ${f.res}" data-open="match|${f.id}" title="${f.home ? "v" : "at"} ${esc(f.opponent.name)} ${f.score}">${f.res}</button>`).join("") || '<span class="muted">No earlier matches</span>'}</span></div>`;
+      panel.innerHTML = `<div class="card-lite"><p class="section-label">Match stats</p><div class="stats">${rows}</div></div>
+        <div class="card-lite"><p class="section-label">Before kick-off</p>
+          <div class="facts"><div><span class="muted">Elo rating</span><b>${Math.round(b.elo.home)}</b><b>${Math.round(b.elo.away)}</b></div>
+          <div><span class="muted">League position</span><b>${b.position.home ? ordinal(b.position.home) : "–"}</b><b>${b.position.away ? ordinal(b.position.away) : "–"}</b></div></div>
+          <p class="section-label" style="margin-top:14px">Form (last 5, tap for the match)</p>${formRow("home")}${formRow("away")}</div>`;
+      requestAnimationFrame(() => requestAnimationFrame(() => $$(".sbar span", panel).forEach((s_, i) => { s_.style.transitionDelay = `${i * 30}ms`; s_.style.width = `${s_.dataset.w}%`; })));
+    } else if (tab === "lineups") {
+      if (!m.lineups) { panel.innerHTML = `<p class="empty-note">Line-ups come from Fantasy Premier League data, which starts in 2016-17.</p>`; return; }
+      const L = m.lineups;
+      const playerDot = (p, team) => `<button type="button" class="pdot" data-open="player|${esc(p.key)}" title="${esc(p.name)}: ${p.minutes} min, ${p.points} FPL pts">
+        <span class="pshirt" style="--c:${team.color};--ink:${team.ink}">${esc(p.position)}</span>${pointsChip(p.points)}
+        <span class="pname">${esc(p.short)}${p.goals ? ` <span class="ev">${"⚽".repeat(Math.min(p.goals, 3))}</span>` : ""}${p.red ? ' <span class="booking red"></span>' : p.yellow ? ' <span class="booking yellow"></span>' : ""}</span></button>`;
+      const half = (side) => L[side].lines.filter((l) => l.length).map((l) => `<div class="pline">${l.map((p) => playerDot(p, c[side])).join("")}</div>`).join("");
+      const subs = (side) => L[side].subs.map((p) => `<button type="button" class="sub" data-open="player|${esc(p.key)}">${pointsChip(p.points)}<span>${esc(p.name)}</span><span class="muted">${p.minutes}'</span></button>`).join("") || '<span class="muted">None</span>';
+      const best = [L.home.best, L.away.best].filter(Boolean).sort((x, y) => y.points - x.points)[0];
+      panel.innerHTML = `<div class="pitch-head"><span>${badgeHTML(c.home, "small")} ${esc(L.home.formation)}</span><span>${esc(L.away.formation)} ${badgeHTML(c.away, "small")}</span></div>
+        <div class="pitch"><div class="pitch-lines" aria-hidden="true"></div><div class="phalf top">${half("home")}</div><div class="phalf bottom">${half("away")}</div></div>
+        ${best ? `<p class="best">Most FPL points: <button type="button" class="link" data-open="player|${esc(best.key)}">${esc(best.name)}</button> ${pointsChip(best.points)}</p>` : ""}
+        <div class="grid-2 tight"><div><p class="section-label">${esc(c.home.name)} substitutes</p><div class="subs">${subs("home")}</div></div><div><p class="section-label">${esc(c.away.name)} substitutes</p><div class="subs">${subs("away")}</div></div></div>
+        <p class="footnote">Starting elevens and positions from Fantasy Premier League data; badges show FPL points earned in this match.</p>`;
+      fixPitchOrder(panel);
+    } else if (tab === "prediction") {
+      const pr = c.prediction, bk = m.bookmaker;
+      const names = { H: `${c.home.name} win`, D: "Draw", A: `${c.away.name} win` };
+      const bar = (p, label) => { const [ph, pd, pa] = pct3([p.H, p.D, p.A]); return `<div class="pbar-row"><span class="muted">${label}</span><div class="prob-bar small"><span class="seg home" style="width:calc(${p.H * 100}% - 1.34px)"></span><span class="seg draw" style="width:calc(${p.D * 100}% - 1.34px)"></span><span class="seg away" style="width:calc(${p.A * 100}% - 1.34px)"></span></div><span class="pbar-nums"><b class="home-ink">${ph}</b> · ${pd} · <b class="away-ink">${pa}</b></span></div>`; };
+      panel.innerHTML = pr ? `<div class="card-lite">
+          <p class="verdict ${pr.pick === c.result ? "ok" : "no"}">${pr.pick === c.result ? CHECK : CROSS}<span>The model's pick was <b>${esc(names[pr.pick])}</b>; it ended <b>${esc(names[c.result])}</b>.</span></p>
+          ${bar(pr, "Our model (before kick-off)")}${bk ? bar(bk, "Bookmaker (Bet365)") : ""}
+          <p class="footnote">Made by a model trained only on earlier seasons (walk-forward test), so it never saw this match.</p></div>`
+        : `<p class="empty-note">Predictions exist for the test seasons 2014-15 to 2025-26. Earlier seasons were used to train the model.${bk ? "" : ""}</p>${bk ? `<div class="card-lite">${bar(bk, "Bookmaker (Bet365)")}</div>` : ""}`;
+    } else {
+      panel.innerHTML = m.h2h.length ? `<div class="card-lite"><p class="section-label">Last ${m.h2h.length} league meetings</p>${m.h2h.map((g, i) => `<button type="button" class="h2h" data-open="match|${g.id}" style="--i:${i}"><span class="muted">${esc(g.season)}</span><span class="h2h-teams">${badgeHTML(g.home, "small")} <b>${g.home_goals}-${g.away_goals}</b> ${badgeHTML(g.away, "small")}</span><span class="muted">${fmtDate(g.date, { day: "numeric", month: "short", year: "numeric" })}</span></button>`).join("")}</div>`
+        : `<p class="empty-note">These teams hadn't met in the league since 2000-01 before this match.</p>`;
+    }
+  };
+  wireTabs(body, draw);
+  draw("overview");
+}
+
+function fixPitchOrder(panel) {
+  // The away half shows its lines from forwards (middle) down to goalkeeper (bottom).
+  const bottom = $(".phalf.bottom", panel);
+  const lines = $$(".pline", bottom);
+  lines.reverse().forEach((l) => bottom.appendChild(l));
+}
+
+async function renderTeamSheet(item) {
+  const t = await api(`/api/football/team?name=${encodeURIComponent(item.name)}&season=${encodeURIComponent(item.season)}`);
+  const r = t.row;
+  const body = $("#sheet-body");
+  body.innerHTML = `
+    <div class="team-head" style="--c:${t.team.color}">
+      ${badgeHTML(t.team, "xlarge")}
+      <div><h2>${esc(t.team.name)}</h2><p class="muted">${t.manager ? `Manager: ${esc(t.manager)}` : "Manager: not in the data for this season"}</p></div>
+      <select id="team-season" aria-label="Season">${t.seasons.map((x) => `<option ${x === t.season ? "selected" : ""}>${x}</option>`).join("")}</select>
+    </div>
+    <div class="tiles four">
+      <div class="tile"><span class="tile-value">${ordinal(r.position)}</span><span class="tile-label">League position</span></div>
+      <div class="tile"><span class="tile-value">${r.points}</span><span class="tile-label">Points</span></div>
+      <div class="tile"><span class="tile-value small-text">${r.won}-${r.drawn}-${r.lost}</span><span class="tile-label">Won-drawn-lost</span></div>
+      <div class="tile"><span class="tile-value small-text">${r.gf}:${r.ga}</span><span class="tile-label">Goals for : against</span></div>
+    </div>
+    <div class="card-lite"><p class="section-label">Form (last 5 league matches)</p><div class="form-pills big">${r.form.map(formPill).join("")}</div>
+      <p class="section-label" style="margin-top:14px">Elo rating through the season</p><div class="chart" id="team-elo"></div></div>
+    ${t.top_players.length ? `<div class="card-lite"><p class="section-label">Top players (FPL points)</p>${t.top_players.map((p, i) => `<button type="button" class="player-mini" data-open="player|${esc(p.key)}" style="--i:${i}"><span class="avatar" style="--c:${t.team.color};--ink:${t.team.ink}">${esc(initials(p.name))}</span><span class="pm-name"><span class="nm">${esc(p.name)}</span><small>${esc(p.position)} · ${p.apps} apps · ${p.goals} goals · ${p.assists} assists</small></span>${pointsChip(p.points)}</button>`).join("")}</div>` : ""}
+    <div class="card-lite"><p class="section-label">All matches this season (${t.results.length})</p><div class="team-results">${t.results.map((m, i) => `<div class="tr-row"><span class="comp-tag ${m.competition}">${esc(m.competition === "premier_league" ? "PL" : m.competition_name)}</span>${matchRow(m, i).replace('class="match-row', `${m.id != null ? `data-open="match|${m.id}" ` : ""}class="match-row compact`)}</div>`).join("")}</div>
+      <p class="footnote">${esc(t.manager_note)}</p></div>`;
+  $("#team-season").addEventListener("change", () => openSheet({ type: "team", name: t.team.name, season: $("#team-season").value }));
+  lineChart($("#team-elo"), [{ name: "Elo", color: t.team.color, points: t.elo.map((e, i) => ({ x: i, y: e.elo, label: e.date })) }], {
+    height: 160, yFormat: (v) => Math.round(v), xTicks: [], tipTitle: (p) => t.elo[p.x].date, ariaLabel: "Elo rating through the season",
+  });
+}
+
+const initials = (name) => name.split(/\s+/).filter(Boolean).map((w) => w[0]).slice(0, 2).join("").toUpperCase();
+
+async function renderPlayerSheet(item) {
+  const p = await api(`/api/football/player?key=${encodeURIComponent(item.key)}`);
+  const body = $("#sheet-body");
+  body.innerHTML = `
+    <div class="team-head" style="--c:${p.team.color}">
+      <span class="avatar xlarge" style="--c:${p.team.color};--ink:${p.team.ink}">${esc(initials(p.name))}</span>
+      <div><h2>${esc(p.name)}</h2><p class="muted"><button type="button" class="link" data-open="team|${esc(p.team.name)}|${esc(p.seasons[0].season)}">${esc(p.team.name)}</button> · ${esc({ GK: "Goalkeeper", DEF: "Defender", MID: "Midfielder", FWD: "Forward" }[p.position] || p.position)} · FPL price £${p.price}m</p></div>
+    </div>
+    <div class="tiles four">
+      <div class="tile"><span class="tile-value">${p.career.apps}</span><span class="tile-label">Appearances</span></div>
+      <div class="tile"><span class="tile-value">${p.career.goals}</span><span class="tile-label">Goals</span></div>
+      <div class="tile"><span class="tile-value">${p.career.assists}</span><span class="tile-label">Assists</span></div>
+      <div class="tile"><span class="tile-value">${p.career.points}</span><span class="tile-label">FPL points</span></div>
+    </div>
+    <div class="card-lite"><p class="section-label">Season by season (Premier League, 2016-17 onwards)</p>
+      <div class="table-wrap"><table class="table numbers season-table"><thead><tr><th>Season</th><th>Team</th><th>Apps</th><th>Min</th><th>G</th><th>A</th><th>Pts</th><th>Infl/90</th></tr></thead><tbody>
+      ${p.seasons.map((x) => `<tr><td>${x.season}</td><td><span class="t-team-in" title="${esc(x.team)}">${badgeHTML(x.team_badge, "small")}<span class="hide-narrow">${esc(x.team)}</span></span></td><td>${x.apps}</td><td>${x.minutes.toLocaleString("en")}</td><td>${x.goals}</td><td>${x.assists}</td><td>${x.points}</td><td>${x.influence}</td></tr>`).join("")}
+      </tbody></table></div>
+      <p class="section-label" style="margin-top:14px">Influence per 90 minutes</p><div class="chart" id="player-infl"></div></div>
+    <div class="card-lite"><p class="section-label">Latest matches</p>${p.recent.map((g, i) => `<button type="button" class="h2h" data-open="match|${g.id}" style="--i:${i}"><span class="pill ${g.res}">${g.res}</span><span class="h2h-teams">${g.home ? "v" : "at"} ${badgeHTML(g.opponent, "small")} ${esc(g.opponent.name)} <b>${g.score}</b></span><span class="muted">${g.minutes}' ${g.goals ? `· ${g.goals}G` : ""}${g.assists ? ` · ${g.assists}A` : ""}</span>${pointsChip(g.points)}</button>`).join("")}</div>`;
+  hbars($("#player-infl"), p.influence_by_season.map((x) => ({ label: x.season, value: x.influence, color: p.team.color })), { format: (v) => v.toFixed(1), labelWidth: 80, rowHeight: 26, ariaLabel: "Influence per 90 by season", allowStack: false });
+}
+
+/* ---------- Players page */
+const pl = { season: null, team: "", pos: "", q: "", sort: "points", page: 0, rows: [] };
+let plToken = 0, plTimer;
+
+async function initPlayers() {
+  const first = await api("/api/football/players?season=");
+  const seasons = first.seasons;
+  $("#pl-season").innerHTML = seasons.map((x) => `<option>${x}</option>`).join("");
+  pl.season = seasons[0];
+  $("#pl-season").value = pl.season;
+  $("#pl-season").addEventListener("change", () => { pl.season = $("#pl-season").value; pl.team = ""; loadPlayers(true); });
+  $("#pl-team").addEventListener("change", () => { pl.team = $("#pl-team").value; loadPlayers(true); });
+  $("#pl-sort").addEventListener("change", () => { pl.sort = $("#pl-sort").value; loadPlayers(true); });
+  $("#pl-search").addEventListener("input", () => { clearTimeout(plTimer); plTimer = setTimeout(() => { pl.q = $("#pl-search").value.trim(); loadPlayers(true); }, 250); });
+  $("#pl-pos").addEventListener("click", (e) => { const b = e.target.closest(".chip"); if (!b) return; pl.pos = b.dataset.pos; $$("#pl-pos .chip").forEach((c) => c.setAttribute("aria-pressed", c === b)); loadPlayers(true); });
+  $("#pl-more").addEventListener("click", () => { pl.page += 1; loadPlayers(false); });
+  $("#pl-list").addEventListener("click", (e) => { const r = e.target.closest("[data-player]"); if (r) openSheet({ type: "player", key: r.dataset.player }); });
+  await loadPlayers(true);
+}
+
+async function loadPlayers(fresh) {
+  const token = ++plToken;
+  if (fresh) pl.page = 0;
+  const q = new URLSearchParams({ season: pl.season, team: pl.team, position: pl.pos, q: pl.q, sort: pl.sort, page: pl.page });
+  const r = await api(`/api/football/players?${q}`);
+  if (token !== plToken) return;
+  if (fresh) {
+    const keep = pl.team;
+    $("#pl-team").innerHTML = `<option value="">All teams</option>` + r.teams.map((t) => `<option>${esc(t)}</option>`).join("");
+    $("#pl-team").value = keep;
+  }
+  const rows = r.players.map((p, i) => `<button type="button" class="pl-row" data-player="${esc(p.key)}" style="--i:${Math.min(i, 20)}">
+    <span class="avatar" style="--c:${p.team_badge.color};--ink:${p.team_badge.ink}">${esc(initials(p.name))}</span>
+    <span class="pl-name"><span class="nm">${esc(p.name)}</span><small>${badgeHTML(p.team_badge, "tiny")} ${esc(p.team)} · ${esc(p.position)}</small></span>
+    <span class="num">${p.apps}</span><span class="num">${p.goals}</span><span class="num">${p.assists}</span>
+    <span class="num hide-s">${p.minutes.toLocaleString("en")}</span><span class="num hide-s">${p.influence}</span><span class="num">${pointsChip(p.points)}</span></button>`).join("");
+  const list = $("#pl-list");
+  if (fresh) { list.classList.remove("stagger"); void list.offsetWidth; list.innerHTML = rows; list.classList.add("stagger"); }
+  else list.insertAdjacentHTML("beforeend", rows);
+  const shown = Math.min(r.total, (r.page + 1) * r.size);
+  $("#pl-count").textContent = r.total ? `Showing ${shown.toLocaleString("en")} of ${r.total.toLocaleString("en")} players` : "No players match.";
+  $("#pl-more").hidden = shown >= r.total;
+}
+
 /* ---------------------------------------------------------------- boot */
 window.addEventListener("hashchange", route);
 let resizeTimer;
@@ -1169,4 +1622,6 @@ window.addEventListener("resize", () => {
 });
 matchMedia("(prefers-color-scheme: dark)").addEventListener("change", () => redraw[current]?.());
 document.fonts?.ready.then(() => moveThumb($(".chrome .segmented")));
+$$("select").forEach(enhanceSelect);
+initSheet();
 route();
