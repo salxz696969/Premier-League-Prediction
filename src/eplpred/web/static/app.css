@@ -1579,7 +1579,7 @@ body.sheet-open { overflow: hidden; }
 .badge .code { line-height: 1; }
 .badge.logo { background: none; box-shadow: none; border-radius: 0; }
 .badge.logo .code { display: none; }
-.badge.logo img { width: 100%; height: 100%; object-fit: contain; display: block; }
+.badge.logo img { width: var(--size); height: var(--size); object-fit: contain; display: block; }
 @media (prefers-color-scheme: dark) { .badge.logo img { filter: drop-shadow(0 0 0.5px rgba(255, 255, 255, 0.35)); } }
 .badge.tiny:not(.logo) .code { display: none; }
 .ranking .name { display: flex; align-items: center; gap: 8px; }

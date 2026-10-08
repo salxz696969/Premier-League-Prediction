@@ -42,12 +42,16 @@ Club crests come from [luukhopman/football-logos](https://github.com/luukhopman/
 
 ![Predict](docs/screenshots/predict.png)
 
+![Match centre](docs/screenshots/match-centre.png)
+
 <details>
-<summary><b>More screenshots</b> (models, teams, seasons, dark mode)</summary>
+<summary><b>More screenshots</b> (matches, league table, players, models, teams, dark mode)</summary>
 
 ![Models](docs/screenshots/models.png)
 ![Teams](docs/screenshots/teams.png)
-![Seasons](docs/screenshots/seasons.png)
+![Matches](docs/screenshots/matches.png)
+![League table](docs/screenshots/table.png)
+![Players](docs/screenshots/players.png)
 ![Dark mode](docs/screenshots/predict-dark.png)
 
 </details>
