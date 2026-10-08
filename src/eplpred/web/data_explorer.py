@@ -43,6 +43,7 @@ def _raw_football_data() -> pd.DataFrame:
 
 def _players() -> pd.DataFrame:
     pm = players.load_player_matches(data.load_matches())
+    pm.insert(pm.columns.get_loc("player"), "name", pm["player"].map(players.nice_name))
     pm["player"] = pm["player"].map(players.display_name)
     pm["value"] = pm["value"] / 10
     pm.insert(1, "season_label", pm["season"].map(data.season_label))

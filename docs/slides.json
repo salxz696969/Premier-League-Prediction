@@ -482,7 +482,7 @@
       0.5421052631578948,
       0.4894736842105263
      ],
-     "color": "away"
+     "color": "violet"
     },
     {
      "name": "Always home win",
@@ -527,7 +527,7 @@
     [
      "Home win",
      "0.56",
-     "0.80",
+     "0.79",
      "0.65",
      "1,336"
     ],
@@ -571,11 +571,11 @@
     "label": "Log loss (bookmaker 0.959, guessing 1.099)"
    },
    {
-    "value": "0.1998",
+    "value": "0.1999",
     "label": "RPS (bookmaker 0.1966, always home 0.2349)"
    },
    {
-    "value": "0.670",
+    "value": "0.669",
     "label": "AUC (0.5 = guessing, 1 = perfect)"
    }
   ],
@@ -604,16 +604,16 @@
    "values": [
     0.5388157894736842,
     0.5351973684210526,
-    0.5440789473684211,
+    0.54375,
     0.5493421052631579
    ],
    "highlight": {
     "+ players": "home",
-    "Bookmaker": "away"
+    "Bookmaker": "violet"
    }
   },
   "body": [
-   "Test seasons 2018-19 to 2025-26 · RPS with players 0.1998 vs 0.2007 without"
+   "Test seasons 2018-19 to 2025-26 · RPS with players 0.1999 vs 0.2007 without"
   ],
   "notes": "We tested whether more data helps. Adding cup, European and international match dates, to measure tiredness, made no difference: 53.5% instead of 53.9%. Adding who is in the starting eleven helped a little: 54.4%. So our final model uses the base features plus the player features.",
   "number": 14

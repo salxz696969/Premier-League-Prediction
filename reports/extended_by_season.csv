@@ -7,76 +7,76 @@ model,feature_set,season_label,accuracy
 "Bookmaker (Bet365, benchmark)",Bookmaker,2023-24,0.5894736842105263
 "Bookmaker (Bet365, benchmark)",Bookmaker,2024-25,0.5421052631578948
 "Bookmaker (Bet365, benchmark)",Bookmaker,2025-26,0.48947368421052634
-Ensemble (LR + GB + Poisson),+ everything,2018-19,0.5815789473684211
-Ensemble (LR + GB + Poisson),+ everything,2019-20,0.5342105263157895
-Ensemble (LR + GB + Poisson),+ everything,2020-21,0.5078947368421053
-Ensemble (LR + GB + Poisson),+ everything,2021-22,0.5684210526315789
+Ensemble (LR + GB + Poisson),+ everything,2018-19,0.5842105263157895
+Ensemble (LR + GB + Poisson),+ everything,2019-20,0.5368421052631579
+Ensemble (LR + GB + Poisson),+ everything,2020-21,0.5
+Ensemble (LR + GB + Poisson),+ everything,2021-22,0.5657894736842105
 Ensemble (LR + GB + Poisson),+ everything,2022-23,0.5473684210526316
 Ensemble (LR + GB + Poisson),+ everything,2023-24,0.5842105263157895
-Ensemble (LR + GB + Poisson),+ everything,2024-25,0.5236842105263158
+Ensemble (LR + GB + Poisson),+ everything,2024-25,0.5263157894736842
 Ensemble (LR + GB + Poisson),+ everything,2025-26,0.4763157894736842
-Ensemble (LR + GB + Poisson),+ fatigue,2018-19,0.5710526315789474
+Ensemble (LR + GB + Poisson),+ fatigue,2018-19,0.5684210526315789
 Ensemble (LR + GB + Poisson),+ fatigue,2019-20,0.5342105263157895
 Ensemble (LR + GB + Poisson),+ fatigue,2020-21,0.5105263157894737
 Ensemble (LR + GB + Poisson),+ fatigue,2021-22,0.5605263157894737
 Ensemble (LR + GB + Poisson),+ fatigue,2022-23,0.5421052631578948
-Ensemble (LR + GB + Poisson),+ fatigue,2023-24,0.5736842105263158
-Ensemble (LR + GB + Poisson),+ fatigue,2024-25,0.5157894736842106
-Ensemble (LR + GB + Poisson),+ fatigue,2025-26,0.48157894736842105
-Ensemble (LR + GB + Poisson),+ players,2018-19,0.5921052631578947
-Ensemble (LR + GB + Poisson),+ players,2019-20,0.5342105263157895
-Ensemble (LR + GB + Poisson),+ players,2020-21,0.5
-Ensemble (LR + GB + Poisson),+ players,2021-22,0.5789473684210527
+Ensemble (LR + GB + Poisson),+ fatigue,2023-24,0.5710526315789474
+Ensemble (LR + GB + Poisson),+ fatigue,2024-25,0.5184210526315789
+Ensemble (LR + GB + Poisson),+ fatigue,2025-26,0.4842105263157895
+Ensemble (LR + GB + Poisson),+ players,2018-19,0.5894736842105263
+Ensemble (LR + GB + Poisson),+ players,2019-20,0.5289473684210526
+Ensemble (LR + GB + Poisson),+ players,2020-21,0.5052631578947369
+Ensemble (LR + GB + Poisson),+ players,2021-22,0.5736842105263158
 Ensemble (LR + GB + Poisson),+ players,2022-23,0.5473684210526316
 Ensemble (LR + GB + Poisson),+ players,2023-24,0.5763157894736842
-Ensemble (LR + GB + Poisson),+ players,2024-25,0.5184210526315789
-Ensemble (LR + GB + Poisson),+ players,2025-26,0.4710526315789474
-Ensemble (LR + GB + Poisson),Base (49 features),2018-19,0.5684210526315789
+Ensemble (LR + GB + Poisson),+ players,2024-25,0.5131578947368421
+Ensemble (LR + GB + Poisson),+ players,2025-26,0.46578947368421053
+Ensemble (LR + GB + Poisson),Base (49 features),2018-19,0.5657894736842105
 Ensemble (LR + GB + Poisson),Base (49 features),2019-20,0.5342105263157895
 Ensemble (LR + GB + Poisson),Base (49 features),2020-21,0.5
 Ensemble (LR + GB + Poisson),Base (49 features),2021-22,0.5763157894736842
 Ensemble (LR + GB + Poisson),Base (49 features),2022-23,0.5394736842105263
 Ensemble (LR + GB + Poisson),Base (49 features),2023-24,0.5842105263157895
-Ensemble (LR + GB + Poisson),Base (49 features),2024-25,0.5210526315789473
+Ensemble (LR + GB + Poisson),Base (49 features),2024-25,0.5131578947368421
 Ensemble (LR + GB + Poisson),Base (49 features),2025-26,0.4842105263157895
-Gradient boosting,+ everything,2018-19,0.5605263157894737
+Gradient boosting,+ everything,2018-19,0.5631578947368421
 Gradient boosting,+ everything,2019-20,0.5342105263157895
-Gradient boosting,+ everything,2020-21,0.5052631578947369
-Gradient boosting,+ everything,2021-22,0.5473684210526316
-Gradient boosting,+ everything,2022-23,0.5473684210526316
+Gradient boosting,+ everything,2020-21,0.5105263157894737
+Gradient boosting,+ everything,2021-22,0.5578947368421052
+Gradient boosting,+ everything,2022-23,0.55
 Gradient boosting,+ everything,2023-24,0.5710526315789474
 Gradient boosting,+ everything,2024-25,0.5105263157894737
 Gradient boosting,+ everything,2025-26,0.46578947368421053
-Gradient boosting,+ fatigue,2018-19,0.5526315789473685
-Gradient boosting,+ fatigue,2019-20,0.5342105263157895
-Gradient boosting,+ fatigue,2020-21,0.5105263157894737
-Gradient boosting,+ fatigue,2021-22,0.5552631578947368
-Gradient boosting,+ fatigue,2022-23,0.5552631578947368
-Gradient boosting,+ fatigue,2023-24,0.5763157894736842
-Gradient boosting,+ fatigue,2024-25,0.5131578947368421
-Gradient boosting,+ fatigue,2025-26,0.4763157894736842
+Gradient boosting,+ fatigue,2018-19,0.5578947368421052
+Gradient boosting,+ fatigue,2019-20,0.531578947368421
+Gradient boosting,+ fatigue,2020-21,0.5078947368421053
+Gradient boosting,+ fatigue,2021-22,0.5526315789473685
+Gradient boosting,+ fatigue,2022-23,0.55
+Gradient boosting,+ fatigue,2023-24,0.5736842105263158
+Gradient boosting,+ fatigue,2024-25,0.5157894736842106
+Gradient boosting,+ fatigue,2025-26,0.4789473684210526
 Gradient boosting,+ players,2018-19,0.5710526315789474
-Gradient boosting,+ players,2019-20,0.5263157894736842
-Gradient boosting,+ players,2020-21,0.5026315789473684
-Gradient boosting,+ players,2021-22,0.5605263157894737
-Gradient boosting,+ players,2022-23,0.55
-Gradient boosting,+ players,2023-24,0.5605263157894737
-Gradient boosting,+ players,2024-25,0.5105263157894737
-Gradient boosting,+ players,2025-26,0.4710526315789474
-Gradient boosting,Base (49 features),2018-19,0.5657894736842105
-Gradient boosting,Base (49 features),2019-20,0.531578947368421
-Gradient boosting,Base (49 features),2020-21,0.5105263157894737
+Gradient boosting,+ players,2019-20,0.5236842105263158
+Gradient boosting,+ players,2020-21,0.5131578947368421
+Gradient boosting,+ players,2021-22,0.5657894736842105
+Gradient boosting,+ players,2022-23,0.5447368421052632
+Gradient boosting,+ players,2023-24,0.5657894736842105
+Gradient boosting,+ players,2024-25,0.5131578947368421
+Gradient boosting,+ players,2025-26,0.46842105263157896
+Gradient boosting,Base (49 features),2018-19,0.5631578947368421
+Gradient boosting,Base (49 features),2019-20,0.5289473684210526
+Gradient boosting,Base (49 features),2020-21,0.5131578947368421
 Gradient boosting,Base (49 features),2021-22,0.5552631578947368
-Gradient boosting,Base (49 features),2022-23,0.5526315789473685
-Gradient boosting,Base (49 features),2023-24,0.5842105263157895
-Gradient boosting,Base (49 features),2024-25,0.5157894736842106
-Gradient boosting,Base (49 features),2025-26,0.4763157894736842
-Logistic regression,+ everything,2018-19,0.5789473684210527
-Logistic regression,+ everything,2019-20,0.5342105263157895
-Logistic regression,+ everything,2020-21,0.5
-Logistic regression,+ everything,2021-22,0.5631578947368421
-Logistic regression,+ everything,2022-23,0.5605263157894737
-Logistic regression,+ everything,2023-24,0.5763157894736842
+Gradient boosting,Base (49 features),2022-23,0.55
+Gradient boosting,Base (49 features),2023-24,0.5736842105263158
+Gradient boosting,Base (49 features),2024-25,0.5184210526315789
+Gradient boosting,Base (49 features),2025-26,0.47368421052631576
+Logistic regression,+ everything,2018-19,0.5684210526315789
+Logistic regression,+ everything,2019-20,0.5263157894736842
+Logistic regression,+ everything,2020-21,0.5026315789473684
+Logistic regression,+ everything,2021-22,0.5578947368421052
+Logistic regression,+ everything,2022-23,0.5552631578947368
+Logistic regression,+ everything,2023-24,0.5789473684210527
 Logistic regression,+ everything,2024-25,0.5368421052631579
 Logistic regression,+ everything,2025-26,0.4631578947368421
 Logistic regression,+ fatigue,2018-19,0.5684210526315789
@@ -87,14 +87,14 @@ Logistic regression,+ fatigue,2022-23,0.5368421052631579
 Logistic regression,+ fatigue,2023-24,0.5684210526315789
 Logistic regression,+ fatigue,2024-25,0.5289473684210526
 Logistic regression,+ fatigue,2025-26,0.4763157894736842
-Logistic regression,+ players,2018-19,0.5921052631578947
-Logistic regression,+ players,2019-20,0.5368421052631579
-Logistic regression,+ players,2020-21,0.49736842105263157
+Logistic regression,+ players,2018-19,0.5842105263157895
+Logistic regression,+ players,2019-20,0.531578947368421
+Logistic regression,+ players,2020-21,0.5
 Logistic regression,+ players,2021-22,0.5736842105263158
-Logistic regression,+ players,2022-23,0.5552631578947368
+Logistic regression,+ players,2022-23,0.5526315789473685
 Logistic regression,+ players,2023-24,0.5736842105263158
 Logistic regression,+ players,2024-25,0.5236842105263158
-Logistic regression,+ players,2025-26,0.46578947368421053
+Logistic regression,+ players,2025-26,0.4710526315789474
 Logistic regression,Base (49 features),2018-19,0.5815789473684211
 Logistic regression,Base (49 features),2019-20,0.5342105263157895
 Logistic regression,Base (49 features),2020-21,0.5
@@ -103,13 +103,13 @@ Logistic regression,Base (49 features),2022-23,0.5394736842105263
 Logistic regression,Base (49 features),2023-24,0.5763157894736842
 Logistic regression,Base (49 features),2024-25,0.5210526315789473
 Logistic regression,Base (49 features),2025-26,0.48157894736842105
-Poisson goals model,+ everything,2018-19,0.5868421052631579
-Poisson goals model,+ everything,2019-20,0.531578947368421
-Poisson goals model,+ everything,2020-21,0.5131578947368421
+Poisson goals model,+ everything,2018-19,0.5894736842105263
+Poisson goals model,+ everything,2019-20,0.5342105263157895
+Poisson goals model,+ everything,2020-21,0.5052631578947369
 Poisson goals model,+ everything,2021-22,0.5710526315789474
 Poisson goals model,+ everything,2022-23,0.5526315789473685
-Poisson goals model,+ everything,2023-24,0.5815789473684211
-Poisson goals model,+ everything,2024-25,0.5263157894736842
+Poisson goals model,+ everything,2023-24,0.5842105263157895
+Poisson goals model,+ everything,2024-25,0.531578947368421
 Poisson goals model,+ everything,2025-26,0.47368421052631576
 Poisson goals model,+ fatigue,2018-19,0.5684210526315789
 Poisson goals model,+ fatigue,2019-20,0.5289473684210526
@@ -119,14 +119,14 @@ Poisson goals model,+ fatigue,2022-23,0.5421052631578948
 Poisson goals model,+ fatigue,2023-24,0.5684210526315789
 Poisson goals model,+ fatigue,2024-25,0.5184210526315789
 Poisson goals model,+ fatigue,2025-26,0.4789473684210526
-Poisson goals model,+ players,2018-19,0.5973684210526315
-Poisson goals model,+ players,2019-20,0.5342105263157895
+Poisson goals model,+ players,2018-19,0.5921052631578947
+Poisson goals model,+ players,2019-20,0.5368421052631579
 Poisson goals model,+ players,2020-21,0.5131578947368421
-Poisson goals model,+ players,2021-22,0.5789473684210527
-Poisson goals model,+ players,2022-23,0.55
-Poisson goals model,+ players,2023-24,0.5789473684210527
+Poisson goals model,+ players,2021-22,0.5763157894736842
+Poisson goals model,+ players,2022-23,0.5526315789473685
+Poisson goals model,+ players,2023-24,0.5815789473684211
 Poisson goals model,+ players,2024-25,0.5210526315789473
-Poisson goals model,+ players,2025-26,0.4789473684210526
+Poisson goals model,+ players,2025-26,0.4763157894736842
 Poisson goals model,Base (49 features),2018-19,0.5789473684210527
 Poisson goals model,Base (49 features),2019-20,0.5342105263157895
 Poisson goals model,Base (49 features),2020-21,0.5026315789473684

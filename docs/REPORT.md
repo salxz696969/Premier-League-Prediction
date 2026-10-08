@@ -148,20 +148,20 @@ The hardest season was 2015-16 (45.8%), when Leicester City won the league as 50
 
 | Outcome | Precision | Recall | F1 score | Matches |
 |---|---:|---:|---:|---:|
-| Home win | 0.555 | 0.796 | 0.654 | 1,336 |
+| Home win | 0.556 | 0.795 | 0.654 | 1,336 |
 | Draw | 0.000 | 0.000 | 0.000 | 700 |
-| Away win | 0.525 | 0.589 | 0.555 | 1,004 |
+| Away win | 0.523 | 0.589 | 0.554 | 1,004 |
 | **Accuracy** | | | **0.544** | 3,040 |
 
 Confusion matrix (rows: what happened; columns: what the model picked):
 
 | | Picked home win | Picked draw | Picked away win |
 |---|---:|---:|---:|
-| **Home win** | 1,063 | 0 | 273 |
-| **Draw** | 438 | 0 | 262 |
+| **Home win** | 1,062 | 0 | 274 |
+| **Draw** | 435 | 0 | 265 |
 | **Away win** | 413 | 0 | 591 |
 
-The accuracy is 54.4% (95% range 52.6% to 56.2%). Log loss 0.968, Brier 0.575, RPS 0.1998, AUC 0.670 (bookmaker on the same matches: 54.9%, log loss 0.959, RPS 0.1966; always home win: RPS 0.2349).
+The accuracy is 54.4% (95% range 52.6% to 56.1%). Log loss 0.968, Brier 0.575, RPS 0.1999, AUC 0.669 (bookmaker on the same matches: 54.9%, log loss 0.959, RPS 0.1966; always home win: RPS 0.2349).
 
 **The draw problem:** 23% of matches were draws, but a draw is almost never the single most likely result, so the model (like the bookmaker) practically never picks one, and draw recall is 0.00. The probabilities still include the draw chance, and they are well calibrated:
 
@@ -175,7 +175,7 @@ We added two kinds of extra data and tested them the same way on the seasons tha
 |---|---:|---:|
 | Base features | 53.9% | 0.2007 |
 | + fatigue (cup, European and international match dates) | 53.5% | 0.2011 |
-| + players (FPL starting-eleven strength) | 54.4% | 0.1998 |
+| + players (FPL starting-eleven strength) | 54.4% | 0.1999 |
 | Bookmaker (benchmark) | 54.9% | 0.1966 |
 
 **Player data helped a little; fatigue did not.** A likely reason is that the teams with the most midweek games are also the strongest teams, which the Elo rating already captures. The final model, used by the website, is therefore the Poisson model with the base features plus the player features.

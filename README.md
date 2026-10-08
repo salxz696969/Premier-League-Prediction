@@ -21,7 +21,7 @@ uv sync
 uv run python app.py          # opens http://127.0.0.1:8000 in your browser
 ```
 
-It runs on your own computer and needs no internet connection, so it's safe for a live demo. Its sections:
+It runs on your own computer and needs no internet connection, so it's safe for a live demo. The page opens straight away and shows a start-up screen with progress while the model trains (about 15 to 30 seconds); after that every page loads instantly, with grey placeholders for the split second while data arrives. Its sections:
 
 | Section | What it shows |
 |---|---|

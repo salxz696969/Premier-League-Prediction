@@ -182,3 +182,23 @@ def test_club_crests_are_served(base_url, project):
     for path in ["/api/football/overview", "/api/football/matches?season=2019-20&competition=premier_league",
                  "/api/football/table?season=2019-20", "/api/football/players?season=2019-20"]:
         assert get(base_url + path)[0] == 200, path
+
+
+def test_server_answers_while_loading():
+    """During start-up the page is served and the API says 'loading' (503) with progress."""
+    from eplpred.web.server import Startup
+
+    server = create_server(make_application(Startup()), host="127.0.0.1", port=0)
+    threading.Thread(target=server.run, daemon=True).start()
+    url = f"http://127.0.0.1:{server.effective_port}"
+    try:
+        assert get(url + "/")[0] == 200
+        for path in ("/healthz", "/api/overview"):
+            with pytest.raises(urllib.error.HTTPError) as info:
+                get(url + path)
+            assert info.value.code == 503
+            body = json.loads(info.value.read())
+            assert body["status"] == "loading" and body["total"] == len(Startup.STEPS)
+    finally:
+        server.close()
+        server.task_dispatcher.shutdown()

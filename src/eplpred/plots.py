@@ -62,7 +62,7 @@ def _save(fig, name: str) -> None:
 
 def _model_colour(model: str, best_model: str) -> str:
     if model == BOOKMAKER:
-        return RED
+        return VIOLET
     if model == best_model:
         return BLUE
     return GREY
@@ -96,7 +96,7 @@ def model_comparison(overall: pd.DataFrame, best_model: str) -> None:
 
 def accuracy_by_season(by_season: pd.DataFrame, best_model: str) -> None:
     fig, ax = plt.subplots(figsize=(9, 4.4))
-    for model, colour, style in [(BOOKMAKER, RED, "-"), (best_model, BLUE, "-"), (BASELINE, GREY, "--")]:
+    for model, colour, style in [(BOOKMAKER, VIOLET, "-"), (best_model, BLUE, "-"), (BASELINE, GREY, "--")]:
         rows = by_season[by_season["model"] == model]
         ax.plot(rows["season_label"], rows["accuracy"], style, color=colour, marker="o", markersize=5, label=model)
     ax.set_title("Accuracy per test season")
@@ -112,7 +112,7 @@ def calibration(predictions: pd.DataFrame, best_model: str) -> None:
     bins = np.linspace(0, 1, 11)
     for ax, outcome, title in zip(axes, config.OUTCOMES, ["Home win", "Draw", "Away win"]):
         ax.plot([0, 1], [0, 1], color=GREY, linewidth=1, linestyle="--", label="Perfect calibration")
-        for model, colour in [(best_model, BLUE), (BOOKMAKER, RED)]:
+        for model, colour in [(best_model, BLUE), (BOOKMAKER, VIOLET)]:
             rows = predictions[predictions["model"] == model]
             prob = rows[f"prob_{outcome}"]
             happened = rows["result"].eq(outcome)
@@ -206,7 +206,7 @@ def season_2019_comparison(table: pd.DataFrame) -> None:
     """Compare with the original project on the same test matches (Feb-Mar 2020)."""
     rows = table.sort_values("accuracy")
     fig, ax = plt.subplots(figsize=(8, 4.4))
-    colours = [RED if m == BOOKMAKER else TEXT_2 if m.startswith("Original") else GREY if m == BASELINE
+    colours = [VIOLET if m == BOOKMAKER else TEXT_2 if m.startswith("Original") else GREY if m == BASELINE
                else BLUE for m in rows["model"]]
     bars = ax.barh(rows["model"], rows["accuracy"], color=colours, height=0.6)
     for bar in bars:
@@ -226,7 +226,7 @@ def extended_comparison(results: pd.DataFrame) -> None:
     rows = results[results["rps_change"].notna()].copy()
     sets = list(dict.fromkeys(rows["feature_set"]))
     models = list(dict.fromkeys(rows["model"]))
-    colours = dict(zip(sets, [BLUE, VIOLET, AQUA, GREY]))
+    colours = dict(zip(sets, [AQUA, BLUE, GREY, MAGENTA]))
     fig, ax = plt.subplots(figsize=(9, 1.0 + 0.9 * len(models)))
     step = 0.8 / max(1, len(sets))
     for j, fset in enumerate(sets):

@@ -24,10 +24,13 @@ BASELINE = "Baseline: home-win rate"
 class ProjectData:
     """Loads everything once at start-up so every request is fast."""
 
-    def __init__(self):
+    def __init__(self, progress=lambda step: None):
+        progress("Loading matches and features")
         self.matches = data.load_matches()
         self.features = features.load_features()
+        progress("Training the model with player data")
         self.predictor = Predictor(self.matches)
+        progress("Loading the results")
         _, self.final_elo = compute_elo(self.matches)  # ratings after the last match
         self.overall = pd.read_csv(config.RESULTS_CSV)
         self.by_season = pd.read_csv(config.RESULTS_BY_SEASON_CSV)

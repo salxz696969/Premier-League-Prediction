@@ -37,6 +37,32 @@ CLUBS = {
     "West Bromwich Albion": ("WBA", "#122F67"), "West Ham United": ("WHU", "#7A263A"), "Wigan Athletic": ("WIG", "#1D59AF"),
     "Wolverhampton": ("WOL", "#FDB913"),
 }
+# Short names for small screens, as football apps use them.
+SHORT = {
+    "Manchester United": "Man Utd", "Manchester City": "Man City", "Tottenham Hotspur": "Spurs",
+    "Wolverhampton": "Wolves", "Wolverhampton Wanderers": "Wolves", "Brighton & Hove Albion": "Brighton",
+    "Brighton and Hove Albion": "Brighton", "Newcastle United": "Newcastle", "West Ham United": "West Ham",
+    "Nottingham Forest": "Nott'm Forest", "Crystal Palace": "Palace", "Leeds United": "Leeds",
+    "Leicester City": "Leicester", "Sheffield United": "Sheffield Utd", "West Bromwich Albion": "West Brom",
+    "Queens Park Rangers": "QPR", "Huddersfield Town": "Huddersfield", "Blackburn Rovers": "Blackburn",
+    "Bolton Wanderers": "Bolton", "Wigan Athletic": "Wigan", "Charlton Athletic": "Charlton",
+    "Birmingham City": "Birmingham", "Cardiff City": "Cardiff", "Swansea City": "Swansea", "Stoke City": "Stoke",
+    "Norwich City": "Norwich", "Derby County": "Derby", "Ipswich Town": "Ipswich", "Luton Town": "Luton",
+    "Hull City": "Hull", "Coventry City": "Coventry", "Bradford City": "Bradford", "Sheffield Wednesday": "Sheffield Wed",
+    "Paris Saint-Germain": "PSG", "Paris Saint-Germain FC": "PSG", "Bayer 04 Leverkusen": "Leverkusen",
+    "Borussia Dortmund": "Dortmund", "Borussia Mönchengladbach": "Gladbach", "Bor. Mönchengladbach": "Gladbach",
+    "Atlético Madrid": "Atlético", "Atletico Madrid": "Atlético", "Club Atlético de Madrid": "Atlético",
+    "FC Internazionale Milano": "Inter", "Internazionale": "Inter", "Sporting Clube de Portugal": "Sporting",
+    "Sport Lisboa e Benfica": "Benfica", "Olympique Lyonnais": "Lyon", "Olympique de Marseille": "Marseille",
+}
+
+
+def short_name(team: str) -> str:
+    if team in SHORT:
+        return SHORT[team]
+    return re.sub(r"^(?:FC|AFC|AC|AS|SSC|SL|SK|FK|CF|RC|PFC)\s+|\s+(?:FC|AFC|CF|SK|BK|FK)$", "", team)
+
+
 LIGHT = {"#6CABDD", "#FBEE23", "#FDB913", "#59CBE8", "#F5A12D", "#F78F1E", "#F68712"}
 
 COMPETITION_ORDER = ["premier_league", "fa_cup", "league_cup", "champions_league", "europa_league"]
@@ -67,7 +93,7 @@ def round_name(raw: str) -> str:
 
 def badge(team: str) -> dict:
     code, color = CLUBS.get(team, (team.replace(" ", "")[:3].upper(), "#8E8E93"))
-    return {"name": team, "code": code, "color": color, "ink": "#1D1D1F" if color in LIGHT else "#FFFFFF",
+    return {"name": team, "short": short_name(team), "code": code, "color": color, "ink": "#1D1D1F" if color in LIGHT else "#FFFFFF",
             "pl": team in CLUBS, "logo": logos.logo_url(team)}
 
 
@@ -236,7 +262,7 @@ class Football:
 
     def _lineup(self, rows: pd.DataFrame) -> dict:
         def player(p):
-            return {"name": p.player, "short": p.short_name if isinstance(p.short_name, str) else p.player.split()[-1],
+            return {"name": p.name, "short": p.short_name if isinstance(p.short_name, str) else p.player.split()[-1],
                     "key": p.key, "position": p.position, "minutes": int(p.minutes), "goals": int(p.goals_scored),
                     "assists": int(p.assists), "yellow": int(p.yellow_cards), "red": int(p.red_cards),
                     "points": int(p.total_points), "influence": float(p.influence)}
@@ -303,10 +329,10 @@ class Football:
     @staticmethod
     def _player_rows(pm: pd.DataFrame) -> pd.DataFrame:
         if pm.empty:
-            return pd.DataFrame(columns=["key", "name", "team", "position", "apps", "starts", "minutes", "goals", "assists", "clean_sheets", "points", "influence", "price"])
+            return pd.DataFrame(columns=["key", "name", "full_name", "team", "position", "apps", "starts", "minutes", "goals", "assists", "clean_sheets", "points", "influence", "price"])
         g = pm.sort_values("date").groupby("key")
         out = pd.DataFrame({
-            "name": g["player"].last(), "team": g["team"].last(), "position": g["position"].last(),
+            "name": g["name"].last(), "full_name": g["player"].last(), "team": g["team"].last(), "position": g["position"].last(),
             "apps": g["minutes"].apply(lambda s: int((s > 0).sum())), "starts": g["starter"].sum().astype(int),
             "minutes": g["minutes"].sum().astype(int), "goals": g["goals_scored"].sum().astype(int),
             "assists": g["assists"].sum().astype(int), "clean_sheets": g["clean_sheets"].sum().astype(int),
@@ -327,7 +353,8 @@ class Football:
         rows = self._player_rows(pm)
         rows = rows[rows["apps"] > 0]
         if q:
-            rows = rows[rows["name"].str.lower().str.contains(q.lower(), regex=False)]
+            hit = lambda col: rows[col].str.lower().str.contains(q.lower(), regex=False)
+            rows = rows[hit("name") | hit("full_name")]
         if sort in rows.columns:
             rows = rows.sort_values([sort, "minutes"], ascending=False)
         total = len(rows)
@@ -362,7 +389,7 @@ class Football:
         trend = pm.sort_values("date").groupby("season_label").apply(
             lambda d: float(d["influence"].sum() / max(d["minutes"].sum(), 1) * 90), include_groups=False)
         last = pm.sort_values("date").iloc[-1]
-        return {"key": key, "name": last.player, "team": badge(last.team), "position": last.position,
+        return {"key": key, "name": last["name"], "full_name": last.player, "team": badge(last.team), "position": last.position,
                 "price": round(float(last.price_m), 1), "seasons": by_season[::-1], "recent": games,
                 "influence_by_season": [{"season": s, "influence": round(v, 1)} for s, v in trend.items()],
                 "career": {k: int(sum(s[k] for s in by_season)) for k in ("apps", "minutes", "goals", "assists", "points")}}

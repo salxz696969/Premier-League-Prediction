@@ -22,6 +22,7 @@ Source: vaastav/Fantasy-Premier-League (MIT), see SOURCES.md.
 
 from __future__ import annotations
 
+import functools
 import io
 import re
 import unicodedata
@@ -210,16 +211,7 @@ def team_player_features(matches: pd.DataFrame, player_matches: pd.DataFrame | N
     # Key players: top-5 by total influence over the team's previous 10 matches.
     key_missing = {}
     for team, rows in players.groupby("team"):
-        match_order = rows[["match_id", "date"]].drop_duplicates().sort_values("date")["match_id"].tolist()
-        by_match = {m: g for m, g in rows.groupby("match_id")}
-        for i, mid in enumerate(match_order):
-            recent = match_order[max(0, i - KEY_WINDOW):i]
-            if not recent:
-                continue
-            history = pd.concat([by_match[m] for m in recent])
-            top = history.groupby("player")["influence"].sum().nlargest(KEY_PLAYERS).index
-            starting = set(by_match[mid].loc[by_match[mid]["starter"], "player"])
-            key_missing[(mid, team)] = sum(p not in starting for p in top)
+        key_missing.update(_key_missing(team, rows))
     team_match["key_missing"] = pd.Series(key_missing)
     team_match = team_match.reset_index()
 
@@ -229,6 +221,64 @@ def team_player_features(matches: pd.DataFrame, player_matches: pd.DataFrame | N
                                  ["xi_influence", "xi_ict", "xi_value", "xi_size", "key_missing"]}})
         out = out.merge(part, on=["match_id", f"{side}_team"], how="left")
     return out.drop(columns=["home_team", "away_team"]).set_index("match_id")
+
+
+def _key_missing(team: str, rows: pd.DataFrame) -> dict:
+    """How many of the team's KEY_PLAYERS most influential players over its
+    previous KEY_WINDOW matches are not in this match's starting eleven.
+
+    Vectorised over a (matches x players) grid; ties go to the player whose
+    name comes first, as with pandas' nlargest on a name-sorted index."""
+    match_order = rows[["match_id", "date"]].drop_duplicates().sort_values("date")["match_id"].to_numpy()
+    names = np.sort(rows["player"].unique())
+    i = pd.Index(match_order).get_indexer(rows["match_id"])
+    j = np.searchsorted(names, rows["player"].to_numpy())
+    shape = (len(match_order), len(names))
+    influence, present, started = np.zeros(shape, np.int64), np.zeros(shape, bool), np.zeros(shape, bool)
+    # FPL influence has one decimal: add whole tenths so equal totals tie exactly.
+    np.add.at(influence, (i, j), np.round(rows["influence"].to_numpy(float) * 10).astype(np.int64))
+    present[i, j] = True
+    started[i[rows["starter"].to_numpy(bool)], j[rows["starter"].to_numpy(bool)]] = True
+    out = {}
+    for k in range(1, len(match_order)):
+        lo = max(0, k - KEY_WINDOW)
+        candidates = present[lo:k].any(axis=0)
+        score = np.where(candidates, influence[lo:k].sum(axis=0), -1)
+        top = np.argsort(-score, kind="stable")[: min(KEY_PLAYERS, int(candidates.sum()))]
+        out[(match_order[k], team)] = int((~started[k, top]).sum())
+    return out
+
+
+def known_name(first: str, second: str, web: str) -> str:
+    """The name fans use, from FPL's own fields: 'Bukayo Saka' (first name +
+    shirt name), 'Bruno Fernandes' (from 'B.Fernandes'), or a nickname alone
+    when the shirt name isn't part of the surname ('Casemiro', 'Rodri', 'Gabriel')."""
+    fold = lambda t: unicodedata.normalize("NFKD", str(t)).encode("ascii", "ignore").decode().lower()
+    web = str(web).strip()
+    if "." in web:  # 'B.Fernandes' -> 'Fernandes', 'Ederson M.' -> 'Ederson'
+        web = " ".join(t for t in re.split(r"[.\s]+", web) if len(t) > 1) or web
+    given = str(first).split()[0] if str(first).strip() else ""
+    if given and fold(web) in fold(second) and not fold(web).startswith(fold(given)):
+        return f"{given} {web}"
+    return web
+
+
+@functools.cache
+def known_names() -> dict[str, str]:
+    """player key -> known name, for every player in the FPL player lists (latest season wins)."""
+    names = {}
+    for year in range(FIRST_FPL_SEASON, config.LAST_SEASON + 1):
+        path = RAW / f"players_{season_label(year)}.csv"
+        if path.exists():
+            info = pd.read_csv(path)
+            for first, second, web in info[["first_name", "second_name", "web_name"]].itertuples(index=False):
+                names[player_key(f"{first} {second}")] = known_name(first, second, web)
+    return names
+
+
+def nice_name(key: str) -> str:
+    """Known name if FPL lists the player, else the full name nicely capitalised."""
+    return known_names().get(key) or display_name(key)
 
 
 def display_name(key: str) -> str:
@@ -273,9 +323,9 @@ def latest_lineups(player_matches: pd.DataFrame) -> dict[str, dict]:
             "xi_ict": float(rating["ict_index_p90"].mean() * 11),
             "xi_value": float(xi["value"].mean() * 11 / 10),
             "key_missing": float(sum(p not in xi.index for p in top)),
-            "players": [{"name": display_name(p), "influence_p90": round(float(r), 1)}
+            "players": [{"name": nice_name(p), "influence_p90": round(float(r), 1)}
                         for p, r in ranked["influence_p90"].items()],
-            "missing": [display_name(p) for p in top if p not in xi.index],
+            "missing": [nice_name(p) for p in top if p not in xi.index],
             "last_match": last["date"].iloc[0].date().isoformat(),
         }
     return out

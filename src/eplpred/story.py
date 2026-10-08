@@ -135,7 +135,7 @@ def build_slides(n: dict) -> list[dict]:
         "categories": list(st.index),
         "series": [
             {"name": short(n["best"]), "values": [float(v) for v in st["model"]], "color": "home"},
-            {"name": "Bookmaker (Bet365)", "values": [float(v) for v in st["book"]], "color": "away"},
+            {"name": "Bookmaker (Bet365)", "values": [float(v) for v in st["book"]], "color": "violet"},
             {"name": "Always home win", "values": [float(v) for v in st["base"]], "color": "muted", "dashed": True},
         ],
     }
@@ -156,7 +156,7 @@ def build_slides(n: dict) -> list[dict]:
         extra_chart = {
             "type": "bar", "horizontal": True, "format": "percent", "min": 0, "max": 0.6,
             "categories": [r[0] for r in rows], "values": [float(r[1]["accuracy"]) for r in rows],
-            "highlight": {"+ players": "home", "Bookmaker": "away"},
+            "highlight": {"+ players": "home", "Bookmaker": "violet"},
         }
     pc = {c["outcome"]: c for c in app["per_class"]}
     hs, as_ = e["sides"]["home"], e["sides"]["away"]

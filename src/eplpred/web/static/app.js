@@ -24,11 +24,99 @@ const ordinal = (n) => {
 };
 const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+
+/* Fetch JSON from our server. While the server is still starting it answers
+   503 "loading": wait for it (the start-up screen shows progress) and retry.
+   A dropped connection is retried a few times before giving up. */
 async function api(path) {
-  const res = await fetch(path);
-  const body = await res.json();
-  if (!res.ok) throw new Error(body.error || res.statusText);
-  return body;
+  for (let attempt = 0; ; attempt++) {
+    let res;
+    try {
+      res = await fetch(path);
+    } catch {
+      if (attempt < 3) { await sleep(600 * (attempt + 1)); continue; }
+      throw new Error("Can't reach the app server. Is it still running?");
+    }
+    let body = null;
+    try { body = await res.json(); } catch { /* not JSON, e.g. a proxy error page */ }
+    if (res.status === 503 && body?.loading) { await whenReady(); continue; }
+    if (!res.ok) throw new Error(body?.error || `The server answered ${res.status} ${res.statusText}`.trim());
+    if (body === null) throw new Error("The server sent an answer that couldn't be read");
+    return body;
+  }
+}
+
+/* ------------------------------------------------------------ start-up */
+let readyPromise;
+function whenReady() {
+  return (readyPromise ??= (async () => {
+    const boot = $("#boot");
+    const showTimer = setTimeout(() => { boot.hidden = false; }, 250); // no flash when already ready
+    for (;;) {
+      let st;
+      try {
+        const res = await fetch("/healthz", { cache: "no-store" });
+        st = await res.json();
+      } catch {
+        st = { status: "offline" };
+      }
+      if (st.status === "ok") break;
+      renderBoot(st);
+      if (st.status === "error") { clearTimeout(showTimer); boot.hidden = false; await new Promise(() => {}); }
+      await sleep(400);
+    }
+    clearTimeout(showTimer);
+    if (!boot.hidden) {
+      renderBoot({ status: "loading", done: BOOT_STEPS.length, total: BOOT_STEPS.length });
+      await sleep(250);
+      boot.classList.add("leaving");
+      await sleep(420);
+      boot.hidden = true;
+    }
+  })());
+}
+const BOOT_STEPS = ["Loading matches and features", "Training the model with player data", "Loading the results",
+  "Preparing matches, tables and players", "Preparing the evaluation and the report"];
+function renderBoot(st) {
+  const done = st.done ?? 0, total = st.total ?? BOOT_STEPS.length;
+  $("#boot-fill").style.width = `${Math.max(4, ((done + (st.status === "loading" && done < total ? 0.5 : 0)) / total) * 100)}%`;
+  $("#boot-steps").innerHTML = BOOT_STEPS.map((step, i) => `<li class="${i < done ? "done" : i === done ? "now" : ""}"><span class="boot-dot" aria-hidden="true">${i < done ? CHECK : ""}</span>${esc(step)}</li>`).join("");
+  const sub = $("#boot-sub");
+  if (st.status === "offline") sub.textContent = "Can't reach the app server yet. Retrying…";
+  else if (st.status === "error") sub.textContent = `Start-up failed: ${st.error}. Check the terminal for details.`;
+  else sub.textContent = "Getting everything ready. This takes about 15 to 30 seconds.";
+  $("#boot").classList.toggle("failed", st.status === "error");
+  $("#boot-retry").hidden = st.status !== "error";
+}
+
+/* ------------------------------------------------------------ skeletons */
+const skLine = (w, cls = "") => `<span class="sk ${cls}" style="width:${w}%"></span>`;
+function skeletonHTML(spec) {
+  const [kind, a = 6, b = 6] = spec.split(":");
+  const n = +a, cols = +b;
+  const rep = (k, f) => Array.from({ length: k }, (_, i) => f(i)).join("");
+  const w = (i, base = 55, span = 35) => base + ((i * 37) % span);
+  switch (kind) {
+    case "chart": return `<div class="sk sk-block" style="height:${n}px"></div>`;
+    case "tiles": return `<div class="sk-tiles">${rep(n, () => `<div class="sk-tile">${skLine(40, "big")}${skLine(70)}</div>`)}</div>`;
+    case "chips": return `<div class="sk-chips">${rep(n, (i) => `<span class="sk sk-chip" style="width:${60 + ((i * 29) % 50)}px"></span>`)}</div>`;
+    case "lines": return `<div class="sk-lines">${rep(n, (i) => skLine(w(i)))}</div>`;
+    case "bars": return `<div class="sk-lines">${rep(n, (i) => `<div class="sk-row">${skLine(10)}${skLine(100 - i * 12, "bar")}</div>`)}</div>`;
+    case "rows": return rep(n, (i) => `<div class="sk-row">${skLine(4)}<span class="sk sk-circle"></span>${skLine(w(i, 30, 25))}${skLine(28, "bar")}</div>`);
+    case "players": return rep(n, (i) => `<div class="sk-row tall"><span class="sk sk-circle big"></span><span class="sk-stack">${skLine(w(i, 35, 30))}${skLine(25, "thin")}</span>${skLine(8)}${skLine(8)}${skLine(8)}</div>`);
+    case "matches": return `<div class="card day">${skLine(30, "head")}${rep(n, (i) => `<div class="sk-match"><span class="sk-side home">${skLine(w(i, 45, 40))}<span class="sk sk-circle"></span></span><span class="sk sk-score"></span><span class="sk-side">${"<span class=\"sk sk-circle\"></span>"}${skLine(w(i + 3, 45, 40))}</span></div>`)}</div>`;
+    case "trows": return `<tbody>${rep(n, (i) => `<tr class="sk-tr">${rep(cols, (j) => `<td>${skLine(j === 1 ? w(i, 50, 40) : 60)}</td>`)}</tr>`)}</tbody>`;
+    case "doc": return `<div class="sk-lines doc">${skLine(55, "big")}${rep(3, (p) => `${skLine(35, "head")}${rep(5, (i) => skLine(i === 4 ? 60 : 92 + (i % 2) * 6))}`)}</div>`;
+    case "slide": return `<div class="sk sk-block slide"></div>`;
+    case "sheet": return `<div class="sk-sheet"><div class="sk-score-board"><span class="sk sk-circle huge"></span><span class="sk sk-goals"></span><span class="sk sk-circle huge"></span></div>${skLine(100, "tabs")}<div class="card-lite">${rep(6, (i) => `<div class="sk-row">${skLine(8)}${skLine(30)}${skLine(8)}</div>${skLine(100, "thin")}`)}</div><div class="card-lite">${rep(3, (i) => skLine(w(i)))}</div></div>`;
+    default: return "";
+  }
+}
+function paintSkeletons(root) {
+  for (const el of $$("[data-sk]", root)) {
+    if (!el.children.length && !el.textContent.trim()) el.innerHTML = skeletonHTML(el.dataset.sk);
+  }
 }
 
 /* ---------------------------------------------------------------- toast */
@@ -232,12 +320,32 @@ function route() {
   window.scrollTo({ top: 0 });
   if (!loaded.has(name)) {
     loaded.add(name);
-    ({ predict: initPredict, teams: initTeams, models: initModels, evaluation: initEvaluation, matches: initMatches, players: initPlayers, data: initData, report: initReport, slides: initSlides, about: async () => {} })[name]().catch((err) => toast(err.message));
+    const view = $(`#view-${name}`);
+    $(".load-error", view)?.remove();
+    paintSkeletons(view);
+    view.setAttribute("aria-busy", "true");
+    ({ predict: initPredict, teams: initTeams, models: initModels, evaluation: initEvaluation, matches: initMatches, players: initPlayers, data: initData, report: initReport, slides: initSlides, about: async () => {} })[name]()
+      .catch((err) => showLoadError(view, name, err))
+      .finally(() => view.removeAttribute("aria-busy"));
   } else {
     redraw[name]?.();
   }
 }
 const redraw = {};
+
+/* A page that failed to load says why and offers to try again. */
+function showLoadError(view, name, err) {
+  console.warn(err);
+  $$("[data-sk]", view).forEach((el) => { if ($(".sk", el)) el.innerHTML = ""; });
+  const box = document.createElement("div");
+  box.className = "load-error card";
+  box.setAttribute("role", "alert");
+  box.innerHTML = `<p><b>This page couldn't load.</b><br><span class="muted">${esc(err.message)}</span></p><button type="button" class="button">Try again</button>`;
+  $("button", box).addEventListener("click", () => { loaded.delete(name); current = null; box.remove(); route(); });
+  (view.querySelector(".hero") || view.firstElementChild).after(box);
+  view.classList.add("failed");
+  $("button", box).addEventListener("click", () => view.classList.remove("failed"));
+}
 
 /* ------------------------------------------------------------ overview */
 let overviewPromise;
@@ -376,7 +484,7 @@ async function initTeams() {
   const ranking = teamsData.ranking;
   const lo = Math.min(...ranking.map((r) => r.elo)) - 60, hi = Math.max(...ranking.map((r) => r.elo));
   $("#ranking").innerHTML = ranking
-    .map((r, i) => `<li title="Last season: ${r.position ? ordinal(r.position) : "–"}"><span class="rank">${i + 1}</span><span class="name">${crest(r.team, "small")}<span>${esc(r.team)}</span></span><span class="track"><span class="fill" style="width:${((r.elo - lo) / (hi - lo)) * 100}%"></span></span><span class="num">${Math.round(r.elo)}</span></li>`)
+    .map((r, i) => `<li title="Last season: ${r.position ? ordinal(r.position) : "–"}"><span class="rank">${i + 1}</span><span class="name">${crest(r.team, "small")}<span>${BADGES[r.team] ? teamName(BADGES[r.team]) : esc(r.team)}</span></span><span class="track"><span class="fill" style="width:${((r.elo - lo) / (hi - lo)) * 100}%"></span></span><span class="num">${Math.round(r.elo)}</span></li>`)
     .join("");
   $("#team-chips").innerHTML = ranking
     .map((r) => `<button type="button" class="chip" aria-pressed="false" data-team="${esc(r.team)}"><span class="swatch"></span>${esc(r.team)}</button>`)
@@ -462,7 +570,7 @@ async function initModels() {
 function colorForModel(name) {
   const d = modelsData;
   if (name === d.best_model) return css("--home");
-  if (name === d.bookmaker) return css("--away");
+  if (name === d.bookmaker) return css("--book");
   return css("--draw");
 }
 
@@ -491,7 +599,7 @@ function drawModels() {
   const seasons = [...new Set(d.by_season.map((r) => r.season_label))];
   const pick = [
     [d.best_model, css("--home"), false],
-    [d.bookmaker, css("--away"), false],
+    [d.bookmaker, css("--book"), false],
     [d.baseline, css("--text-3"), true],
   ];
   const series = pick.map(([model, color, dashed]) => ({
@@ -521,7 +629,7 @@ function drawModels() {
     hbars($("#extended-chart"), ext.map((r) => ({
       label: label(r),
       value: r.accuracy,
-      color: r.feature_set === "Bookmaker" ? css("--away") : r.feature_set.includes("Base") ? css("--draw") : css("--home"),
+      color: r.feature_set === "Bookmaker" ? css("--book") : r.feature_set.includes("Base") ? css("--draw") : css("--home"),
       tip: `<strong>${esc(label(r))}</strong>${tipRow(null, "Accuracy", pct(r.accuracy, 1))}${tipRow(null, "RPS", r.rps.toFixed(4))}${
         r.rps_change == null ? "" : tipRow(null, "RPS change", `${r.rps_change > 0 ? "+" : ""}${r.rps_change.toFixed(4)}`)}`,
     })), { format: (v) => pct(v, 1), domain: [0, 0.6], labelWidth: 190, rowHeight: 30, ariaLabel: "Accuracy with extra data" });
@@ -536,7 +644,7 @@ function drawModels() {
   hbars($("#original"), orig.map((r) => ({
     label: r.model.startsWith("Original") ? "Version 1 (random forest)" : shortName(r.model),
     value: r.accuracy,
-    color: r.model.startsWith("Original") ? css("--text-2") : r.model === d.baseline ? css("--draw") : r.model === d.bookmaker ? css("--away") : css("--home"),
+    color: r.model.startsWith("Original") ? css("--text-2") : r.model === d.baseline ? css("--draw") : r.model === d.bookmaker ? css("--book") : css("--home"),
   })), { format: (v) => pct(v, 1), domain: [0, 0.7], labelWidth: 190, rowHeight: 28, ariaLabel: "Accuracy on version 1's test matches" });
 }
 
@@ -644,9 +752,10 @@ function goalBars(container, probs, color, team) {
   const max = Math.max(...probs);
   probs.forEach((p, k) => {
     const h = ((height - top - bottom) * p) / max, x = k * (bw + gap), y = height - bottom - h;
-    el("path", { d: `M${x},${height - bottom}v${-(h - 4)}a4,4 0 0 1 4,-4h${bw - 8}a4,4 0 0 1 4,4v${h - 4}z`, fill: color }, svg);
+    if (h >= 4) el("path", { d: `M${x},${height - bottom}v${-(h - 4)}a4,4 0 0 1 4,-4h${bw - 8}a4,4 0 0 1 4,4v${h - 4}z`, fill: color }, svg);
+    else if (h > 0.5) el("rect", { x, y, width: bw, height: h, fill: color }, svg);
     const t = el("text", { x: x + bw / 2, y: y - 5, "text-anchor": "middle", class: "value-label" }, svg);
-    t.textContent = pct(p, 0);
+    t.textContent = p > 0 && p < 0.005 ? "<1%" : pct(p, 0);
     const l = el("text", { x: x + bw / 2, y: height - 6, "text-anchor": "middle" }, svg);
     l.textContent = k === n - 1 ? `${k}` : k;
     const hit = el("rect", { x, y: 0, width: bw, height, class: "hit" }, svg);
@@ -675,7 +784,7 @@ async function initEvaluation() {
     sampleIndex = (sampleIndex + 1) % evalData.samples.length;
     drawWorked();
   });
-  sampleIndex = Math.max(0, evalData.samples.length - 1);
+  sampleIndex = 0;
   drawEvaluation();
   redraw.evaluation = drawEvaluation;
 }
@@ -716,7 +825,7 @@ function drawEvaluation() {
     r.forEach((v, j) => {
       const share = rowTotal ? v / rowTotal : 0;
       const color = i === j ? "--good" : "--draw";
-      html += `<span class="cell" style="background:color-mix(in srgb, var(${color}) ${Math.round(12 + share * 70)}%, var(--surface));color:${share > 0.55 ? "#fff" : "var(--text)"}">${v.toLocaleString("en")}<small>${pct(share)} of row</small></span>`;
+      html += `<span class="cell" style="background:color-mix(in srgb, var(${color}) ${Math.round(12 + share * 70)}%, var(--surface));color:${i === j && share > 0.55 ? "#fff" : "var(--text)"}">${v.toLocaleString("en")}<small>${pct(share)} of row</small></span>`;
     });
   });
   html += `<span></span><span class="axis">Green = correct (the diagonal). Correct total: ${cm.reduce((a, r, i) => a + r[i], 0).toLocaleString("en")} of ${total.toLocaleString("en")} = ${pct(e.accuracy, 1)}</span></div>`;
@@ -736,7 +845,7 @@ function drawCalibration() {
   moveThumb($("#calib-switch"));
   const book = samePeriod(e, "Bookmaker") || samePeriod(e, "book");
   const series = [{ name: shortName(e.label), color: css("--home"), pts: e.calibration[calibOutcome] }];
-  if (book && book !== e) series.push({ name: "Bookmaker (Bet365)", color: css("--away"), pts: book.calibration[calibOutcome] });
+  if (book && book !== e) series.push({ name: "Bookmaker (Bet365)", color: css("--book"), pts: book.calibration[calibOutcome] });
   $("#calib-legend").innerHTML = series.map((s) => `<span><i style="background:${s.color}"></i>${esc(s.name)}</span>`).concat('<span><i class="dashed"></i>Perfect</span>').join("");
   lineChart($("#calibration"), series.map((s) => ({ name: s.name, color: s.color, points: s.pts.map((q) => ({ x: q.predicted, y: q.actual })) })), {
     height: 260, markers: true, diagonal: true, xDomain: [0, 1], yDomain: [0, 1],
@@ -754,7 +863,7 @@ function drawMetricList() {
   const metrics = [
     { name: "Log loss", key: "log_loss", d: 3, lower: true, guess: Math.log(3),
       formula: "average of  −ln(probability given to what actually happened)",
-      what: "Rewards giving a high probability to what happened, and punishes confident mistakes very hard (saying 5 % for something that happens costs −ln 0.05 = 3.0)." },
+      what: "Rewards giving a high probability to what happened, and punishes confident mistakes very hard (saying 5% for something that happens costs −ln 0.05 = 3.0)." },
     { name: "Brier score", key: "brier", d: 3, lower: true, guess: 2 / 3,
       formula: "average of  (p_home − y_home)² + (p_draw − y_draw)² + (p_away − y_away)²     (y = 1 for what happened, 0 otherwise)",
       what: "The squared distance between the predicted probabilities and the real result. 0 = perfect." },
@@ -787,7 +896,7 @@ function drawWorked() {
   const c1 = P[0] - Y[0], c2 = P[0] + P[1] - Y[0] - Y[1], rps = (c1 ** 2 + c2 ** 2) / 2;
   const f = (v) => v.toFixed(3);
   $("#worked").innerHTML = `
-    <div class="worked-match"><span class="date">${m.date} · ${m.season} (test season)</span>
+    <div class="worked-match"><span class="date">${fmtDate(m.date, { day: "numeric", month: "long", year: "numeric" })} · ${m.season} (test season)</span>
       <span class="wm-teams">${esc(m.home)} <strong>${m.score}</strong> ${esc(m.away)}</span>
       <span class="muted">Prediction made before kick-off: ${names.map((n, i) => `${esc(n)} <strong>${pct(P[i], 1)}</strong>`).join(" · ")}</span></div>
     <ol class="worked-steps">
@@ -983,7 +1092,7 @@ async function initReport() {
 }
 
 let deck = [], slideIndex = 0;
-const slideColor = (c) => ({ home: css("--home"), away: css("--away"), muted: css("--draw"), aqua: "#1baf7a", violet: matchMedia("(prefers-color-scheme: dark)").matches ? "#8b7fe8" : "#4a3aa7" }[c] || css("--home"));
+const slideColor = (c) => ({ home: css("--home"), away: css("--away"), muted: css("--draw"), aqua: "#1baf7a", violet: css("--book") }[c] || css("--home"));
 
 async function initSlides() {
   const st = await story();
@@ -1028,7 +1137,6 @@ function showSlide(i) {
   $("#slide-next").disabled = slideIndex === deck.length - 1;
   $("#slide-notes").innerHTML = `<p class="section-label">What to say</p><p>${esc(sl.notes || "")}</p>`;
   $$("#slide-strip button").forEach((b) => b.setAttribute("aria-current", +b.dataset.i === slideIndex ? "true" : "false"));
-  $(`#slide-strip button[data-i="${slideIndex}"]`)?.scrollIntoView({ block: "nearest", inline: "nearest" });
   const chartBox = stage.querySelector(".sl-chart-box");
   if (chartBox && sl.chart) drawSlideChart(chartBox, sl.chart);
 }
@@ -1220,6 +1328,8 @@ new MutationObserver(() => $$("select:not([data-enhanced])").forEach(enhanceSele
 // Club crest when we have one (img), else a disc in the club colour with its code.
 const badgeHTML = (b, size = "") => `<span class="badge ${b.logo ? "logo" : ""} ${size}" style="--c:${b.color};--ink:${b.ink}" title="${esc(b.name)}" aria-hidden="true">${b.logo ? `<img src="${esc(b.logo)}" alt="" decoding="async">` : ""}<span class="code">${esc(b.code)}</span></span>`;
 const BADGES = {};
+// Full club name, swapped for the short one ("Man City") on small screens.
+const teamName = (b) => (b.short && b.short !== b.name ? `<span class="long">${esc(b.name)}</span><span class="short" aria-hidden="true">${esc(b.short)}</span>` : esc(b.name));
 const crest = (team, size) => (BADGES[team] ? badgeHTML(BADGES[team], size) : "");
 // A crest that fails to load falls back to the coloured disc.
 document.addEventListener("error", (e) => { if (e.target.matches?.(".badge.logo img")) { e.target.parentNode.classList.remove("logo"); e.target.remove(); } }, true);
@@ -1241,9 +1351,9 @@ function matchRow(m, i = 0) {
   }
   const tag = m.id != null ? "button" : "div";
   return `<${tag} ${m.id != null ? `type="button" data-match="${m.id}"` : ""} class="match-row ${m.id != null ? "clickable" : ""}" style="--i:${Math.min(i, 20)}">
-    <span class="mr-team home ${aw ? "lost" : ""}"><span class="mr-name">${esc(m.home.name)}</span>${badgeHTML(m.home)}</span>
+    <span class="mr-team home ${aw ? "lost" : ""}"><span class="mr-name">${teamName(m.home)}</span>${badgeHTML(m.home)}</span>
     <span class="mr-score">${played ? `<b>${m.home_goals}</b><i>-</i><b>${m.away_goals}</b>` : "<i>v</i>"}<small>${esc(m.note || m.round || "FT")}</small></span>
-    <span class="mr-team away ${hw ? "lost" : ""}">${badgeHTML(m.away)}<span class="mr-name">${esc(m.away.name)}</span></span>
+    <span class="mr-team away ${hw ? "lost" : ""}">${badgeHTML(m.away)}<span class="mr-name">${teamName(m.away)}</span></span>
     ${predHTML}
   </${tag}>`;
 }
@@ -1315,7 +1425,17 @@ async function loadFixtures() {
   const token = ++fixturesToken;
   const q = new URLSearchParams({ season: mc.season, competition: mc.comp });
   if (mc.round) q.set("round", mc.round);
-  const r = await api(`/api/football/matches?${q}`);
+  const busy = setTimeout(() => $("#mc-list").classList.add("busy"), 150);
+  let r;
+  try {
+    r = await api(`/api/football/matches?${q}`);
+  } catch (err) {
+    if (token === fixturesToken) toast(err.message);
+    return;
+  } finally {
+    clearTimeout(busy);
+    if (token === fixturesToken) $("#mc-list").classList.remove("busy");
+  }
   if (token !== fixturesToken) return;
   mc.rounds = r.rounds; mc.round = r.rounds[r.round_index].key;
   const label = (x) => (x.matchweek ? `Matchweek ${x.matchweek} · ${fmtDate(x.start, { day: "numeric", month: "short" })}${x.end !== x.start ? `–${fmtDate(x.end, { day: "numeric", month: "short" })}` : ""}` : x.label);
@@ -1331,11 +1451,21 @@ async function loadFixtures() {
 }
 
 async function loadTable() {
-  const t = await api(`/api/football/table?season=${encodeURIComponent(mc.season)}`);
+  if (!$("#mc-league tr:not(.sk-tr)")) $("#mc-league").innerHTML = skeletonHTML("trows:20:6");
+  $("#mc-league").classList.add("busy");
+  let t;
+  try {
+    t = await api(`/api/football/table?season=${encodeURIComponent(mc.season)}`);
+  } catch (err) {
+    toast(err.message);
+    return;
+  } finally {
+    $("#mc-league").classList.remove("busy");
+  }
   const n = t.table.length;
   $("#mc-league").innerHTML = `<thead><tr><th>#</th><th class="t-team">Team</th><th>P</th><th class="hide-s">W</th><th class="hide-s">D</th><th class="hide-s">L</th><th class="hide-s">Goals</th><th>GD</th><th>Pts</th><th class="t-form">Form</th></tr></thead><tbody class="stagger">` +
     t.table.map((r, i) => `<tr data-team="${esc(r.team.name)}" style="--i:${Math.min(i, 20)}" class="${r.position <= 4 ? "zone-top" : r.position > n - 3 ? "zone-bottom" : ""}" tabindex="0">
-      <td class="t-pos">${r.position}</td><td class="t-team"><span class="t-team-in">${badgeHTML(r.team, "small")}<span>${esc(r.team.name)}</span></span></td>
+      <td class="t-pos">${r.position}</td><td class="t-team"><span class="t-team-in">${badgeHTML(r.team, "small")}<span>${teamName(r.team)}</span></span></td>
       <td>${r.played}</td><td class="hide-s">${r.won}</td><td class="hide-s">${r.drawn}</td><td class="hide-s">${r.lost}</td><td class="hide-s">${r.gf}:${r.ga}</td>
       <td>${r.gd > 0 ? "+" : ""}${r.gd}</td><td class="t-pts">${r.points}</td><td class="t-form">${r.form.map(formPill).join("")}</td></tr>`).join("") + "</tbody>";
   $$("#mc-league tr[data-team]").forEach((tr) => tr.addEventListener("keydown", (e) => { if (e.key === "Enter") tr.click(); }));
@@ -1375,9 +1505,12 @@ function openSheet(item, push = true) {
   }
   $("#sheet-back").hidden = sheet.stack.length < 2;
   const body = $("#sheet-body");
-  body.innerHTML = '<div class="sheet-loading"><span class="spinner"></span></div>';
+  body.innerHTML = `<div class="sheet-loading" aria-busy="true">${skeletonHTML("sheet")}</div>`;
   body.scrollTop = 0;
-  ({ match: renderMatchSheet, team: renderTeamSheet, player: renderPlayerSheet })[item.type](item).catch((err) => toast(err.message));
+  ({ match: renderMatchSheet, team: renderTeamSheet, player: renderPlayerSheet })[item.type](item).catch((err) => {
+    body.innerHTML = `<div class="load-error"><p><b>Couldn't load this.</b><br><span class="muted">${esc(err.message)}</span></p><button type="button" class="button">Try again</button></div>`;
+    $("button", body).addEventListener("click", () => openSheet(item, false));
+  });
   $("#sheet-close").focus({ preventScroll: true });
 }
 
@@ -1556,7 +1689,7 @@ async function renderPlayerSheet(item) {
     </div>
     <div class="card-lite"><p class="section-label">Season by season (Premier League, 2016-17 onwards)</p>
       <div class="table-wrap"><table class="table numbers season-table"><thead><tr><th>Season</th><th>Team</th><th>Apps</th><th>Min</th><th>G</th><th>A</th><th>Pts</th><th>Infl/90</th></tr></thead><tbody>
-      ${p.seasons.map((x) => `<tr><td>${x.season}</td><td><span class="t-team-in" title="${esc(x.team)}">${badgeHTML(x.team_badge, "small")}<span class="hide-narrow">${esc(x.team)}</span></span></td><td>${x.apps}</td><td>${x.minutes.toLocaleString("en")}</td><td>${x.goals}</td><td>${x.assists}</td><td>${x.points}</td><td>${x.influence}</td></tr>`).join("")}
+      ${p.seasons.map((x) => `<tr><td>${x.season}</td><td><span class="t-team-in" title="${esc(x.team)}">${badgeHTML(x.team_badge, "small")}<span class="hide-narrow">${esc(x.team)}</span></span></td><td>${x.apps}</td><td>${x.minutes.toLocaleString("en")}</td><td>${x.goals}</td><td>${x.assists}</td><td>${x.points}</td><td>${num(x.influence, 1)}</td></tr>`).join("")}
       </tbody></table></div>
       <p class="section-label" style="margin-top:14px">Influence per 90 minutes</p><div class="chart" id="player-infl"></div></div>
     <div class="card-lite"><p class="section-label">Latest matches</p>${p.recent.map((g, i) => `<button type="button" class="h2h" data-open="match|${g.id}" style="--i:${i}"><span class="pill ${g.res}">${g.res}</span><span class="h2h-teams">${g.home ? "v" : "at"} ${badgeHTML(g.opponent, "small")} ${esc(g.opponent.name)} <b>${g.score}</b></span><span class="muted">${g.minutes}' ${g.goals ? `· ${g.goals}G` : ""}${g.assists ? ` · ${g.assists}A` : ""}</span>${pointsChip(g.points)}</button>`).join("")}</div>`;
@@ -1587,7 +1720,17 @@ async function loadPlayers(fresh) {
   const token = ++plToken;
   if (fresh) pl.page = 0;
   const q = new URLSearchParams({ season: pl.season, team: pl.team, position: pl.pos, q: pl.q, sort: pl.sort, page: pl.page });
-  const r = await api(`/api/football/players?${q}`);
+  const busy = setTimeout(() => $("#pl-list").classList.add("busy"), 150);
+  let r;
+  try {
+    r = await api(`/api/football/players?${q}`);
+  } catch (err) {
+    if (token === plToken) toast(err.message);
+    return;
+  } finally {
+    clearTimeout(busy);
+    if (token === plToken) $("#pl-list").classList.remove("busy");
+  }
   if (token !== plToken) return;
   if (fresh) {
     const keep = pl.team;
@@ -1596,9 +1739,9 @@ async function loadPlayers(fresh) {
   }
   const rows = r.players.map((p, i) => `<button type="button" class="pl-row" data-player="${esc(p.key)}" style="--i:${Math.min(i, 20)}">
     <span class="avatar" style="--c:${p.team_badge.color};--ink:${p.team_badge.ink}">${esc(initials(p.name))}</span>
-    <span class="pl-name"><span class="nm">${esc(p.name)}</span><small>${badgeHTML(p.team_badge, "tiny")} ${esc(p.team)} · ${esc(p.position)}</small></span>
+    <span class="pl-name"><span class="nm">${esc(p.name)}</span><small>${badgeHTML(p.team_badge, "tiny")} ${teamName(p.team_badge)} · ${esc(p.position)}</small></span>
     <span class="num">${p.apps}</span><span class="num">${p.goals}</span><span class="num">${p.assists}</span>
-    <span class="num hide-s">${p.minutes.toLocaleString("en")}</span><span class="num hide-s">${p.influence}</span><span class="num">${pointsChip(p.points)}</span></button>`).join("");
+    <span class="num hide-s">${p.minutes.toLocaleString("en")}</span><span class="num hide-s">${num(p.influence, 1)}</span><span class="num">${pointsChip(p.points)}</span></button>`).join("");
   const list = $("#pl-list");
   if (fresh) { list.classList.remove("stagger"); void list.offsetWidth; list.innerHTML = rows; list.classList.add("stagger"); }
   else list.insertAdjacentHTML("beforeend", rows);
@@ -1624,4 +1767,6 @@ matchMedia("(prefers-color-scheme: dark)").addEventListener("change", () => redr
 document.fonts?.ready.then(() => moveThumb($(".chrome .segmented")));
 $$("select").forEach(enhanceSelect);
 initSheet();
-route();
+$("#boot-retry").addEventListener("click", () => location.reload());
+route(); // pages show skeletons; their requests wait until the server is ready
+whenReady();

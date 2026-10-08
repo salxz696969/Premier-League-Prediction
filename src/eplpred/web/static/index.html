@@ -9,6 +9,16 @@
   <link rel="stylesheet" href="app.css">
 </head>
 <body>
+  <div class="boot" id="boot" role="status" aria-live="polite" hidden>
+    <div class="boot-card">
+      <div class="boot-mark" aria-hidden="true"><span class="boot-ball"></span></div>
+      <h1 class="boot-title">Premier League Predictor</h1>
+      <p class="boot-sub" id="boot-sub">Getting everything ready. This takes about 15 to 30 seconds.</p>
+      <div class="boot-bar" aria-hidden="true"><span id="boot-fill"></span></div>
+      <ol class="boot-steps" id="boot-steps"></ol>
+      <button type="button" class="button secondary" id="boot-retry" hidden>Try again</button>
+    </div>
+  </div>
   <header class="chrome">
     <div class="chrome-inner">
       <a class="wordmark" href="#predict" aria-label="Premier League Predictor, home">
@@ -22,7 +32,6 @@
         <a href="#teams" data-view="teams">Teams</a>
         <a href="#models" data-view="models">Models</a>
         <a href="#evaluation" data-view="evaluation">Evaluation</a>
-
         <a href="#data" data-view="data">Data</a>
         <a href="#report" data-view="report">Report</a>
         <a href="#slides" data-view="slides">Slides</a>
@@ -72,7 +81,7 @@
           </div>
           <div>
             <p class="section-label">Most likely scores</p>
-            <ol class="scores" id="scores"></ol>
+            <ol class="scores" id="scores" data-sk="bars:5"></ol>
           </div>
         </div>
         <div class="loading-veil" aria-hidden="true"><span class="spinner"></span></div>
@@ -129,9 +138,9 @@
       <div class="card" id="lineup-card" hidden>
         <div class="card-head">
           <h2>Expected starting eleven</h2>
-          <p class="muted">Each player's FPL influence per 90 minutes over his last 15 games. The model adds these up to rate the whole team.</p>
+          <p class="muted">Each player's FPL influence per 90 minutes over their last 15 games. The model adds these up to rate the whole team.</p>
         </div>
-        <div class="lineups" id="lineups"></div>
+        <div class="lineups" id="lineups" data-sk="lines:8"></div>
         <p class="footnote">Line-ups aren't announced until an hour before kick-off, so each team's 11 most-used starters from its last 5 league matches are assumed.</p>
       </div>
 
@@ -140,7 +149,7 @@
           <h2>Why?</h2>
           <p class="muted">What the model sees before kick-off. The stronger side on each line is highlighted.</p>
         </div>
-        <div class="compare" id="compare"></div>
+        <div class="compare" id="compare" data-sk="lines:4"></div>
         <p class="footnote" id="predict-footnote"></p>
       </div>
     </section>
@@ -155,12 +164,12 @@
       <div class="grid-2">
         <div class="card">
           <div class="card-head"><h2>Right now</h2><p class="muted">Current teams, strongest first</p></div>
-          <ol class="ranking" id="ranking"></ol>
+          <ol class="ranking" id="ranking" data-sk="rows:10"></ol>
         </div>
         <div class="card">
           <div class="card-head"><h2>History</h2><p class="muted">Tap teams to compare (up to 4)</p></div>
-          <div class="chips" id="team-chips"></div>
-          <div class="chart" id="elo-chart"></div>
+          <div class="chips" id="team-chips" data-sk="chips:10"></div>
+          <div class="chart" id="elo-chart" data-sk="chart:340"></div>
         </div>
       </div>
     </section>
@@ -172,7 +181,7 @@
         <h1 class="display">Which model is best?</h1>
         <p class="lede">Each season from 2014-15 on was predicted by models trained only on earlier seasons, the same way you'd use it in real life.</p>
       </div>
-      <div class="tiles" id="model-tiles"></div>
+      <div class="tiles" id="model-tiles" data-sk="tiles:4"></div>
       <div class="card">
         <div class="card-head row">
           <div><h2>All models</h2><p class="muted" id="metric-note"></p></div>
@@ -183,27 +192,27 @@
             <button type="button" data-metric="log_loss">Log loss</button>
           </div>
         </div>
-        <div class="chart" id="model-bars"></div>
+        <div class="chart" id="model-bars" data-sk="chart:300"></div>
       </div>
       <div class="card">
         <div class="card-head"><h2>Season by season</h2><p class="muted">Accuracy in each test season</p></div>
         <div class="legend" id="season-legend"></div>
-        <div class="chart" id="season-chart"></div>
+        <div class="chart" id="season-chart" data-sk="chart:320"></div>
       </div>
       <div class="card" id="extended-card" hidden>
         <div class="card-head"><h2>Does extra data help?</h2><p class="muted">Poisson model on 2018-19 to 2025-26, with extra data added to the 49 base features</p></div>
-        <div class="chart" id="extended-chart"></div>
+        <div class="chart" id="extended-chart" data-sk="chart:220"></div>
         <p class="footnote" id="extended-note"></p>
       </div>
       <div class="grid-2">
         <div class="card">
           <div class="card-head"><h2>Which inputs matter</h2><p class="muted">How much worse it gets when one input is scrambled</p></div>
-          <div class="chart" id="importance"></div>
+          <div class="chart" id="importance" data-sk="chart:420"></div>
         </div>
         <div class="card">
           <div class="card-head"><h2>Version 1 vs version 2</h2><p class="muted">The original project's 38 test matches</p></div>
-          <div class="chart" id="original"></div>
-          <p class="footnote">On only 38 matches even "always pick the home team" scores 57.9 %, so a small test can't tell good models from lucky ones. That's why this version tests on 4,560 matches.</p>
+          <div class="chart" id="original" data-sk="chart:200"></div>
+          <p class="footnote">On only 38 matches even "always pick the home team" scores 57.9%, so a small test can't tell good models from lucky ones. That's why this version tests on 4,560 matches.</p>
         </div>
       </div>
     </section>
@@ -221,17 +230,17 @@
         <span class="muted" id="eval-period"></span>
       </div>
 
-      <div class="tiles" id="eval-tiles"></div>
+      <div class="tiles" id="eval-tiles" data-sk="tiles:4"></div>
 
       <div class="card">
         <div class="card-head"><h2>How the test was done</h2><p class="muted">Walk-forward testing: to predict a season, the model only learns from the seasons before it, like in real life</p></div>
-        <div class="chart" id="walk-forward"></div>
+        <div class="chart" id="walk-forward" data-sk="chart:240"></div>
         <div class="legend"><span><i style="background:var(--draw)"></i>Training seasons</span><span><i style="background:var(--home)"></i>Test season (predicted, never seen)</span></div>
       </div>
 
       <div class="card">
         <div class="card-head"><h2>Classification report</h2><p class="muted">How good the model's single pick (its most likely result) is, for each outcome</p></div>
-        <div class="table-wrap"><table class="table numbers report" id="class-report"></table></div>
+        <div class="table-wrap"><table class="table numbers report" id="class-report" data-sk="trows:5:6"></table></div>
         <dl class="glossary">
           <div><dt>Precision</dt><dd>When the model picks this result, how often is it right? <code>correct picks ÷ all picks of it</code></dd></div>
           <div><dt>Recall</dt><dd>Of all matches that really ended this way, how many did the model pick? <code>correct picks ÷ real cases</code></dd></div>
@@ -243,12 +252,12 @@
       <div class="grid-2">
         <div class="card">
           <div class="card-head"><h2>Confusion matrix</h2><p class="muted">Rows: what really happened. Columns: what the model picked.</p></div>
-          <div id="eval-confusion"></div>
+          <div id="eval-confusion" data-sk="chart:220"></div>
           <p class="footnote" id="draw-note"></p>
         </div>
         <div class="card">
           <div class="card-head row">
-            <div><h2>Calibration</h2><p class="muted">When it says X %, does it happen X % of the time?</p></div>
+            <div><h2>Calibration</h2><p class="muted">When it says X%, does it happen X% of the time?</p></div>
             <div class="segmented small" id="calib-switch" role="group" aria-label="Outcome">
               <span class="segmented-thumb" aria-hidden="true"></span>
               <button type="button" data-outcome="H" aria-pressed="true">Home</button>
@@ -257,13 +266,13 @@
             </div>
           </div>
           <div class="legend" id="calib-legend"></div>
-          <div class="chart" id="calibration"></div>
+          <div class="chart" id="calibration" data-sk="chart:300"></div>
         </div>
       </div>
 
       <div class="card">
-        <div class="card-head"><h2>Probability scores</h2><p class="muted">Accuracy only checks the single pick. These scores judge the whole probability (e.g. 55 % / 25 % / 20 %), so a confident wrong prediction is punished more than a careful one.</p></div>
-        <div class="metric-list" id="metric-list"></div>
+        <div class="card-head"><h2>Probability scores</h2><p class="muted">Accuracy only checks the single pick. These scores judge the whole probability (e.g. 55% / 25% / 20%), so a confident wrong prediction is punished more than a careful one.</p></div>
+        <div class="metric-list" id="metric-list" data-sk="tiles:6"></div>
       </div>
 
       <div class="card">
@@ -271,7 +280,7 @@
           <div><h2>Worked example</h2><p class="muted">Every metric, calculated by hand for one real test match</p></div>
           <button type="button" class="button secondary inline" id="another-match">Another match</button>
         </div>
-        <div id="worked"></div>
+        <div id="worked" data-sk="lines:6"></div>
       </div>
     </section>
 
@@ -293,15 +302,15 @@
       </div>
       <div id="mc-fixtures">
         <div class="round-nav">
-          <button type="button" class="round-arrow" id="mc-prev" aria-label="Previous round">‹</button>
+          <button type="button" class="round-arrow" id="mc-prev" aria-label="Previous round" disabled>‹</button>
           <select id="mc-round" aria-label="Round"></select>
-          <button type="button" class="round-arrow" id="mc-next" aria-label="Next round">›</button>
+          <button type="button" class="round-arrow" id="mc-next" aria-label="Next round" disabled>›</button>
         </div>
-        <div class="match-list" id="mc-list"></div>
+        <div class="match-list" id="mc-list" data-sk="matches:8"></div>
       </div>
       <div id="mc-table" hidden>
         <div class="card league-card">
-          <div class="table-wrap"><table class="league" id="mc-league"></table></div>
+          <div class="table-wrap"><table class="league" id="mc-league" data-sk="trows:20:6"></table></div>
           <div class="legend zones"><span><i style="background:var(--home)"></i>Champions League places</span><span><i style="background:var(--away)"></i>Relegation</span><span class="muted">Form: last 5 league matches, newest on the right</span></div>
         </div>
       </div>
@@ -335,7 +344,7 @@
       </div>
       <div class="card pl-card">
         <div class="pl-head"><span></span><span>Player</span><span class="num"><abbr title="Appearances">Apps</abbr></span><span class="num"><abbr title="Goals">G<span class="hide-s">oals</span></abbr></span><span class="num"><abbr title="Assists">A<span class="hide-s">ssists</span></abbr></span><span class="num hide-s">Minutes</span><span class="num hide-s">Infl/90</span><span class="num"><abbr title="FPL points">P<span class="hide-s">oin</span>ts</abbr></span></div>
-        <div class="pl-list" id="pl-list"></div>
+        <div class="pl-list" id="pl-list" data-sk="players:12"></div>
         <p class="muted pl-count" id="pl-count"></p>
         <button type="button" class="button secondary" id="pl-more" hidden>Show more</button>
       </div>
@@ -349,9 +358,9 @@
         <p class="lede">Every dataset behind the project, row by row. Search, filter, sort, pick columns, and download exactly what you see as a CSV file.</p>
       </div>
 
-      <div class="dataset-grid" id="dataset-grid" role="list"></div>
+      <div class="dataset-grid" id="dataset-grid" data-sk="tiles:8" role="list"></div>
 
-      <div class="card dataset-info" id="dataset-info"></div>
+      <div class="card dataset-info" id="dataset-info" data-sk="lines:3"></div>
 
       <div class="card data-card">
         <div class="data-toolbar">
@@ -371,7 +380,7 @@
           <a class="button inline" id="data-download" href="#" download>Download CSV</a>
         </div>
         <div class="data-table-wrap" id="data-table-wrap">
-          <table class="data-table" id="data-table"></table>
+          <table class="data-table" id="data-table" data-sk="trows:12:8"></table>
         </div>
         <div class="pager">
           <span class="muted" id="data-count"></span>
@@ -397,8 +406,8 @@
         </div>
       </div>
       <div class="report-layout">
-        <nav class="report-toc card" id="report-toc" aria-label="Report contents"></nav>
-        <article class="card report-doc" id="report"></article>
+        <nav class="report-toc card" id="report-toc" data-sk="lines:10" aria-label="Report contents"></nav>
+        <article class="card report-doc" id="report" data-sk="doc"></article>
       </div>
     </section>
 
@@ -414,7 +423,7 @@
         </div>
       </div>
       <div class="deck" id="deck">
-        <div class="stage" id="stage" tabindex="0" aria-roledescription="slide" aria-live="polite"></div>
+        <div class="stage" id="stage" data-sk="slide" tabindex="0" aria-roledescription="slide" aria-live="polite"></div>
         <div class="deck-controls">
           <button type="button" class="button secondary inline" id="slide-prev" aria-label="Previous slide">‹</button>
           <span class="muted" id="slide-count"></span>
@@ -422,7 +431,7 @@
           <label class="notes-toggle"><input type="checkbox" id="notes-toggle" checked> Speaker notes</label>
         </div>
         <div class="card notes" id="slide-notes"></div>
-        <ol class="slide-strip" id="slide-strip"></ol>
+        <ol class="slide-strip" id="slide-strip" data-sk="chips:12"></ol>
       </div>
     </section>
 
@@ -448,6 +457,7 @@
           <li><strong>Fantasy Premier League data</strong> by Vaastav Anand (MIT): player minutes, influence, ICT index and prices, 2016-17 onwards. <a href="https://github.com/vaastav/Fantasy-Premier-League" target="_blank" rel="noopener">github.com/vaastav</a></li>
           <li><strong>engsoccerdata</strong> by James Curley (GPL-2+) and <strong>openfootball</strong> (CC0): FA Cup, League Cup, Champions League and Europa League fixtures. <a href="https://github.com/jalapic/engsoccerdata" target="_blank" rel="noopener">engsoccerdata</a> · <a href="https://github.com/openfootball" target="_blank" rel="noopener">openfootball</a></li>
           <li><strong>International results</strong> by Mart Jürisoo (CC0): international break dates. <a href="https://github.com/martj42/international_results" target="_blank" rel="noopener">github.com/martj42</a></li>
+          <li><strong>Football Team Logos</strong> by Luuk Hopman: club crests shown on the website (crests belong to the clubs). <a href="https://github.com/luukhopman/football-logos" target="_blank" rel="noopener">github.com/luukhopman</a></li>
           <li><strong>Elo, A. E. (1978)</strong>. <em>The Rating of Chessplayers, Past and Present</em>.</li>
           <li><strong>Hvattum &amp; Arntzen (2010)</strong>. Using ELO ratings for match result prediction in association football. <em>International Journal of Forecasting</em>.</li>
           <li><strong>Maher (1982)</strong>. Modelling association football scores. <em>Statistica Neerlandica</em>.</li>

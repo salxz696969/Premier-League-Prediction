@@ -72,9 +72,10 @@ curl --fail http://127.0.0.1:8000/healthz
 bash deploy.sh <previous-full-commit-sha> 8000
 ```
 
-The container generates features during image creation and loads the data and
-trained model before accepting requests. `/healthz` therefore checks readiness,
-not merely whether a process exists. The container runs Waitress as a non-root
+The container generates features during image creation. At start-up the server
+answers at once (the page shows a loading screen) while it loads the data and
+trains the model; `/healthz` returns 503 with the loading progress until that is
+done, then 200. It therefore checks readiness, not merely whether a process exists. The container runs Waitress as a non-root
 user and publishes port 8000 through Docker.
 
 For a local preview, run `uv run python app.py --no-browser`.
